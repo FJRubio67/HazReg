@@ -28,7 +28,7 @@ The current version of the `HazReg` R package implements the following parametri
 
 All positive parameters are transformed into the real line using a `log` reparameterisation.
 
-An Illustrative example can be found at:
+An Illustrative example and a description of the available models can be found at:
 
 [HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg)
 
