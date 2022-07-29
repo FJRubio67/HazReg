@@ -16,19 +16,20 @@ These models are fitted using the R commands `nlminb` and `optim`. Thus, the use
 
 The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section.
 
-- [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution.
+- [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution. `PGWMLE`
+ 
+- [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution. `EWMLE`
+ 
+- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton. `GGMLE`
 
-- [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution.
+- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution. `GMLE`
 
-- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton.
+- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution. `LNMLE`
 
-- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution.
+- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution. `LLMLE`
 
-- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution.
+- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. (only for AFT, PH, and AH models) `WMLE`
 
-- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution.
-
-- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. 
 
 All positive parameters are transformed into the real line using a `log` reparameterisation.
 
