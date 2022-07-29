@@ -1,4 +1,4 @@
-# HazReg
+# HazReg R package
 
 The `HazReg` R package implements the following parametric hazard-based regression models for (overall) survival data.
 
