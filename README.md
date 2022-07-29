@@ -10,6 +10,10 @@ The `HazReg` R package implements the following parametric hazard-based regressi
 
 - Accelerated Hazards (AH) model.
 
+
+These models are fitted using the R commands `nlminb` and `optim`. Thus, the user needs to specify the initial points and to check the convergence of the optimisation step, as usual.
+
+
 The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section.
 
 - [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution.
