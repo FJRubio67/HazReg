@@ -47,3 +47,4 @@ library(HazReg)
 ?hggama
 ```
 
+See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS)
