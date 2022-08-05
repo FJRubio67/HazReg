@@ -35,7 +35,9 @@ All positive parameters are transformed into the real line using a `log` reparam
 
 An Illustrative example and a description of the available models can be found at:
 
-[HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg)
+[HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg) [RPubs]
+
+[HazReg: Parametric Hazard-based regression models for survival data](https://fjrubio.quarto.pub/hazreg/) [quarto-pub]
 
 ```
 library(devtools)
