@@ -50,4 +50,5 @@ library(HazReg)
 ?hggama
 ```
 
-See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS)
+See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS), [Short course on Parametric Survival Analysis
+](https://github.com/FJRubio67/ShortCourseParamSurvival)
