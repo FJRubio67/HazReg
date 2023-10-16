@@ -132,6 +132,21 @@ chew <- function(t, sigma, nu, gamma){
 }
 
 #----------------------------------------------------------------------------------------
+#' Power Exponentiated Weibull (EW) quantile function.
+#' https://rpubs.com/FJRubio/EWD
+#----------------------------------------------------------------------------------------
+#' @param p       : 	probability. A value in (0,1)
+#' @param sigma     : scale parameter
+#' @param nu      : shape parameter
+#' @param gamma   : shape parameter
+#' @return the value of the EW quantile function
+#' @export
+qew <- function(p, sigma, nu, gamma){
+  quant <-  qweibull(p^(1/gamma),scale=sigma,shape=nu)
+  return(quant)
+}
+
+#----------------------------------------------------------------------------------------
 #' Weibull (W) hazard function.
 #----------------------------------------------------------------------------------------
 #' @param sigma     : scale parameter
@@ -227,7 +242,6 @@ chllogis <- function(t, mu, sigma){
 #' @param mu      : mean parameter in the log scale
 #' @param sigma     : scale parameter in the log scale
 #' @param p       : 	probability. A value in (0,1)
-#' @param log: log scale (TRUE or FALSE)
 #' @return the value of the LL quantile function
 #' @export
 qllogis <- function(p, mu, sigma){
@@ -1032,10 +1046,10 @@ WMLE <- function(init, times, status, hstr = "W", des = NULL, des_t = NULL, meth
 }
 
 
-###########################################################################################
+#----------------------------------------------------------------------------------------
 #' Function to calculate the normal confidence intervals.
 #' The parameters indicated with "index" are transformed to the real line using log().
-###########################################################################################
+#----------------------------------------------------------------------------------------
 #' @param FUN   : minus log-likelihood function to be used to calculate the confidence intervals
 #' @param MLE   : maximum likelihood estimator of the parameters of interest
 #' @param level : confidence level
@@ -1063,3 +1077,91 @@ Conf_Int <- function(FUN,MLE,level=0.95,index=NULL){
   colnames(C.I)<- c("Lower","Upper","Transf MLE", "Std. Error")
   return(C.I)
 }
+
+#----------------------------------------------------------------------------------------
+#' simGH function: Function to simulate times to event from a model with a GH structure
+#' for different parametric baseline hazards.
+#' Distributions: LN, LL, GG, G (Gamma), W (Weibull), PGW, EW. 
+#' See: https://github.com/FJRubio67/HazReg
+#----------------------------------------------------------------------------------------
+#' @param seed  : seed for simulation
+#' @param n : sample size (number of individuals)
+#' @param theta  :  parameters of the baseline hazard
+#' @param beta_h  : regression parameters multiplying the hazard for GH model
+#' @param beta_t  : regression parameters multiplying the time scale for GH model
+#' @param beta  : regression parameters for AFT, PH, and AH models
+#' @param des_h : Design matrix for GH model (hazard scale)
+#' @param des_t : Design matrix for GH model (time scale)
+#' @param des : Design matrix for AFT, PH, and AH models
+#' @param hstr  : hazard structure (AH, AFT, PH, GH)
+#' @param baseline  : baseline hazard distribution 
+#' @return a vector containing the simulated times to event
+#' @export
+#----------------------------------------------------------------------------------------
+simGH <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta, 
+                  beta_h = NULL, beta_t = NULL, beta = NULL, hstr, baseline){
+  
+  if(!is.null(des))   des <- as.matrix(des)
+  if(!is.null(des_h)) des_h <- as.matrix(des_h)
+  if(!is.null(des_t)) des_t <- as.matrix(des_t)
+  
+  # Baseline hazard
+  if(baseline == "LN")      quantf <- function(p) qlnorm(p, theta[1], theta[2])
+  if(baseline == "LL")      quantf <- function(p) qllogis(p, theta[1], theta[2])
+  if(baseline == "G")       quantf <- function(p) qgamma(p, theta[1], theta[2])
+  if(baseline == "W")       quantf <- function(p) qweibull(p, theta[1], theta[2])
+  if(baseline == "PGW")     quantf <- function(p) qpgw(p, theta[1], theta[2], theta[3])
+  if(baseline == "EW")      quantf <- function(p) qew(p, theta[1], theta[2], theta[3])
+  if(baseline == "GG")      quantf <- function(p) qggamma(p, theta[1], theta[2], theta[3])
+  
+  # Uniform variates used in the simulation
+  set.seed(seed)
+  u = runif(n)
+  
+  # GH simulation
+  if( hstr == "GH" ){
+    # Linear predictors
+    exp.xbeta_t  <- exp(des_t%*%beta_t)
+    exp.dif <- exp(des_t%*%beta_t - des_h%*%beta_h )
+    
+    # Simulating the times to event
+    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
+    times <- as.vector(quantf(p0)/exp.xbeta_t)
+  }
+  
+  # PH simulation
+  if( hstr == "PH" ){
+    # Linear predictors
+    exp.xbeta_t  <- 1
+    exp.dif <- exp( - des%*%beta )
+    
+    # Simulating the times to event
+    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
+    times <- as.vector(quantf(p0)/exp.xbeta_t)
+  }
+  
+  # AFT simulation
+  if( hstr == "AFT" ){
+    # Linear predictors
+    exp.xbeta_t  <- exp(des%*%beta)
+    exp.dif <- 1
+    
+    # Simulating the times to event
+    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
+    times <- as.vector(quantf(p0)/exp.xbeta_t)
+  }
+  
+  # AH simulation
+  if( hstr == "AH" ){
+    # Linear predictors
+    exp.xbeta_t  <- exp(des%*%beta)
+    exp.dif <- exp(des%*%beta)
+    
+    # Simulating the times to event
+    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
+    times <- as.vector(quantf(p0)/exp.xbeta_t)
+  }
+  
+  return(as.vector(times))
+}
+

@@ -12,8 +12,6 @@ qllogis(p, mu, sigma)
 \item{mu}{: mean parameter in the log scale}
 
 \item{sigma}{: scale parameter in the log scale}
-
-\item{log:}{log scale (TRUE or FALSE)}
 }
 \value{
 the value of the LL quantile function
