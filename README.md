@@ -50,5 +50,7 @@ library(HazReg)
 ?hggama
 ```
 
-See also: [Short course on Parametric Survival Analysis
+See also: 
+- [simGH: simulating times to event from a general hazard structure](https://rpubs.com/FJRubio/simGH)
+- [Short course on Parametric Survival Analysis
 ](https://github.com/FJRubio67/ShortCourseParamSurvival)
