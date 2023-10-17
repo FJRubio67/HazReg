@@ -48,6 +48,8 @@ library(HazReg)
 ?GGMLE
 ?hpgw
 ?hggama
+
+?simGH
 ```
 
 See also: 
