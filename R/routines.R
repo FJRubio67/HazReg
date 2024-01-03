@@ -397,16 +397,26 @@ rggamma <- function(n, sigma, nu, gamma){
 
 
 #----------------------------------------------------------------------------------------
-#' PGWMLE function: Hazard Regression Models with Power Generalised Weibull (PGW) baseline hazard
+#' GHMLE function: Hazard Regression Models with a parametric baseline hazard
 #----------------------------------------------------------------------------------------
 #' @param init    : initial point for optimisation step
-#' under the parameterisation (log(scale), log(shape1), log(shape2), alpha, beta)
+#' under the parameterisation (log(scale), log(shape1), log(shape2), alpha, beta) for scale-shape1-shape2 models or
+#' (mu, log(scale), alpha, beta) for log-location scale models.
 #' @param hstr    : hazard structure:
-#'           PGW without covariates ("PGW"),
-#'           AFT model with PGW baseline hazard ("PGWAFT"),
-#'           PH model with PGW baseline hazard ("PGWPH"),
-#'           AH model with PGW baseline hazard ("PGWAH"),
-#'           GH model with PGW baseline hazard ("PGWGH")
+#'            No covariates ("baseline"),
+#'           AFT model with PGW baseline hazard ("AFT"),
+#'           PH model with PGW baseline hazard ("PH"),
+#'           AH model with PGW baseline hazard ("AH"),
+#'           GH model with PGW baseline hazard ("GH")
+#'           *GH is not available with Weibull dist
+#' @param dist    : distribution for the baseline hazard:
+#'                 Power Generalised Weibull ("PGW")
+#'                 Generalised Gamma ("GenGamma"))
+#'                 Exponentiated Weibull ("EW")
+#'                 Weibull ("Weibull")
+#'                 Gamma ("Gamma")
+#'                 LogNormal ("LogNormal")
+#'                 LogLogistic ("LogLogistic")
 #' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
 #' @param maxit   : maximum number of iterations in optim or nlminb
 #' @param times   : times to event
@@ -415,635 +425,759 @@ rggamma <- function(n, sigma, nu, gamma){
 #' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
 #' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
 #' @export
-PGWMLE <- function(init, times, status, hstr = "PGW", des = NULL, des_t = NULL,
-                   method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+GHMLE <-
+  function(init,
+           times,
+           status,
+           hstr = NULL,
+           dist = NULL,
+           des = NULL,
+           des_t = NULL,
+           method = "Nelder-Mead",
+           maxit = 100) {
+    # Required variables
+    times <- as.vector(times)
+    status <- as.vector(as.logical(status))
+    times.obs <- times[status]
+    if (!is.null(des)){
+      des <- as.matrix(des)
+      des.obs <- des[status, ]
+    }
+    if (!is.null(des_t)){
+      des_t <- as.matrix(des_t)
+      des_t.obs <- des_t[status, ]
+    }
 
-  # PGW model
-  if(hstr == "PGW"){
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]);
-      haz0 <- hpgw(times.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chpgw(times,ae0,be0,ce0))
-      return(val)
+    #------------------------------------------------------------------------------------
+    # baseline models
+    #------------------------------------------------------------------------------------
+
+    if (hstr == "baseline") {
+      # PGW
+      if (dist == "PGW") {
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+
+          lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chpgw(times, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # EW
+      if (dist == "EW") {
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+
+          lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chew(times, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # GenGamma
+      if (dist == "GenGamma") {
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+
+          lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chggamma(times, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # LogNormal
+      if (dist == "LogNormal") {
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+
+          lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0))
+          return(val)
+        }
+      }
+
+      # LogLogistic
+      if (dist == "LogLogistic") {
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+
+          lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0))
+          return(val)
+        }
+      }
+
+      # Gamma
+      if (dist == "Gamma") {
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+
+          lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chgamma(times, ae0, be0))
+          return(val)
+        }
+      }
+
+      # Weibull
+      if (dist == "Weibull") {
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+
+          lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) + sum(chweibull(times, ae0, be0))
+          return(val)
+        }
+      }
+
     }
-  }
-  # PH model
-  if(hstr == "PGWPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hpgw(times.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chpgw(times,ae0,be0,ce0)*exp.x.beta)
-      return(val)
+
+    #------------------------------------------------------------------------------------
+    # Proportional Hazards models
+    #------------------------------------------------------------------------------------
+
+    if (hstr == "PH") {
+
+      # PGW
+      if (dist == "PGW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chpgw(times, ae0, be0, ce0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # EW
+      if (dist == "EW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chew(times, ae0, be0, ce0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # GenGamma
+      if (dist == "GenGamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chggamma(times, ae0, be0, ce0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # LogNormal
+      if (dist == "LogNormal") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # LogLogistic
+      if (dist == "LogLogistic") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # Gamma
+      if (dist == "Gamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chgamma(times, ae0, be0) * exp.x.beta)
+          return(val)
+        }
+      }
+
+      # Weibull
+      if (dist == "Weibull") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chweibull(times, ae0, be0) * exp.x.beta)
+          return(val)
+        }
+      }
     }
-  }
-  # AFT Model
-  if(hstr == "PGWAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hpgw(times.obs*exp.x.beta.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chpgw(times*exp.x.beta,ae0,be0,ce0))
-      return(val)
+
+    #------------------------------------------------------------------------------------
+    # Accelerated Failure Time models
+    #------------------------------------------------------------------------------------
+
+    if (hstr == "AFT") {
+
+      # PGW
+      if (dist == "PGW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chpgw(times * exp.x.beta, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # EW
+      if (dist == "EW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chew(times * exp.x.beta, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # GenGamma
+      if (dist == "GenGamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chggamma(times * exp.x.beta, ae0, be0, ce0))
+          return(val)
+        }
+      }
+
+      # LogNormal
+      if (dist == "LogNormal") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chlnorm(times * exp.x.beta, ae0, be0))
+          return(val)
+        }
+      }
+
+      # LogLogistic
+      if (dist == "LogLogistic") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chllogis(times * exp.x.beta, ae0, be0))
+          return(val)
+        }
+      }
+
+      # Gamma
+      if (dist == "Gamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chgamma(times * exp.x.beta, ae0, be0))
+          return(val)
+        }
+      }
+
+      # Weibull
+      if (dist == "Weibull") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chweibull(times * exp.x.beta, ae0, be0))
+          return(val)
+        }
+      }
+
     }
-  }
-  # AH Model
-  if(hstr == "PGWAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hpgw(times.obs*exp.x.alpha.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chpgw(times*exp.x.alpha,ae0,be0,ce0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "PGWGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p0)]; beta <- par[(4+p0):(3+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hpgw(times.obs*exp.x.alpha.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chpgw(times*exp.x.alpha,ae0,be0,ce0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
 
 
-#----------------------------------------------------------------------------------------
-#' EWMLE function: Hazard Regression Models with Exponentiated Weibull (EW) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (log(scale), log(shape1), log(shape2), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           EW without covariates ("EW"),
-#'           AFT model with EW baseline hazard ("EWAFT"),
-#'           PH model with EW baseline hazard ("EWPH"),
-#'           AH model with EW baseline hazard ("EWAH"),
-#'           GH model with EW baseline hazard ("EWGH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
-#' @export
-EWMLE <- function(init, times, status, hstr = "EW", des = NULL, des_t = NULL,
-                  method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+    #------------------------------------------------------------------------------------
+    # Accelerated Hazards models
+    #------------------------------------------------------------------------------------
 
-  # EW model
-  if(hstr == "EW"){
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]);
-      haz0 <- hew(times.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chew(times,ae0,be0,ce0))
-      return(val)
-    }
-  }
-  # PH model
-  if(hstr == "EWPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hew(times.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chew(times,ae0,be0,ce0)*exp.x.beta)
-      return(val)
-    }
-  }
-  # AFT Model
-  if(hstr == "EWAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hew(times.obs*exp.x.beta.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chew(times*exp.x.beta,ae0,be0,ce0))
-      return(val)
-    }
-  }
-  # AH Model
-  if(hstr == "EWAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hew(times.obs*exp.x.alpha.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chew(times*exp.x.alpha,ae0,be0,ce0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "EWGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p0)]; beta <- par[(4+p0):(3+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hew(times.obs*exp.x.alpha.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chew(times*exp.x.alpha,ae0,be0,ce0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
+    if (hstr == "AH") {
 
-#----------------------------------------------------------------------------------------
-#' GGMLE function: Hazard Regression Models with Generalised Gamma (GG) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (log(scale), log(shape1), log(shape2), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           GG without covariates ("GG"),
-#'           AFT model with GG baseline hazard ("GGAFT"),
-#'           PH model with GG baseline hazard ("GGPH"),
-#'           AH model with GG baseline hazard ("GGAH"),
-#'           GH model with GG baseline hazard ("GGGH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
-#' @export
+      # PGW
+      if (dist == "PGW") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p)]
 
-GGMLE <- function(init, times, status, hstr = "GG", des = NULL, des_t = NULL,
-                  method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
-  # GG model
-  if(hstr == "GG"){
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]);
-      haz0 <- hggamma(times.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chggamma(times,ae0,be0,ce0))
-      return(val)
-    }
-  }
-  # PH model
-  if(hstr == "GGPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hggamma(times.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chggamma(times,ae0,be0,ce0)*exp.x.beta)
-      return(val)
-    }
-  }
-  # AFT Model
-  if(hstr == "GGAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); beta <- par[4:(3+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hggamma(times.obs*exp.x.beta.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chggamma(times*exp.x.beta,ae0,be0,ce0))
-      return(val)
-    }
-  }
-  # AH Model
-  if(hstr == "GGAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hggamma(times.obs*exp.x.alpha.obs,ae0,be0,ce0)
-      val <- - sum(log(haz0)) + sum(chggamma(times*exp.x.alpha,ae0,be0,ce0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "GGGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  ce0 <- exp(par[3]); alpha <- par[4:(3+p0)]; beta <- par[(4+p0):(3+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hggamma(times.obs*exp.x.alpha.obs,ae0,be0,ce0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chggamma(times*exp.x.alpha,ae0,be0,ce0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
+          val <- -sum(lhaz0) +
+            sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
+          return(val)
+        }
+      }
 
+      # EW
+      if (dist == "EW") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p)]
 
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
-#----------------------------------------------------------------------------------------
-#' LNMLE function: Hazard Regression Models with Lognormal (LN) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (meanlog, log(scale), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           LN without covariates ("LN"),
-#'           AFT model with LN baseline hazard ("LNAFT"),
-#'           PH model with LN baseline hazard ("LNPH"),
-#'           AH model with LN baseline hazard ("LNAH"),
-#'           GH model with LN baseline hazard ("LNGH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
+          val <- -sum(lhaz0) +
+            sum(chew(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
+          return(val)
+        }
+      }
 
-LNMLE <- function(init, times, status, hstr = "LN", des = NULL, des_t = NULL,
-                  method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+      # GenGamma
+      if (dist == "GenGamma") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p)]
 
-  # LN model
-  if(hstr == "LN"){
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);
-      haz0 <- hlnorm(times.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chlnorm(times,ae0,be0))
-      return(val)
-    }
-  }
-  # PH model
-  if(hstr == "LNPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hlnorm(times.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chlnorm(times,ae0,be0)*exp.x.beta)
-      return(val)
-    }
-  }
-  # AFT Model
-  if(hstr == "LNAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hlnorm(times.obs*exp.x.beta.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chlnorm(times*exp.x.beta,ae0,be0))
-      return(val)
-    }
-  }
-  # AH Model
-  if(hstr == "LNAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   alpha <- par[3:(2+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hlnorm(times.obs*exp.x.alpha.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chlnorm(times*exp.x.alpha,ae0,be0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "LNGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   alpha <- par[3:(2+p0)]; beta <- par[(3+p0):(2+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hlnorm(times.obs*exp.x.alpha.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chlnorm(times*exp.x.alpha,ae0,be0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
-#----------------------------------------------------------------------------------------
-#' LNMLE function: Hazard Regression Models with Log-logistic (LL) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (meanlog, log(scale), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           LL without covariates ("LL"),
-#'           AFT model with LL baseline hazard ("LLAFT"),
-#'           PH model with LL baseline hazard ("LLPH"),
-#'           AH model with LL baseline hazard ("LLAH"),
-#'           GH model with LL baseline hazard ("LLGH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
+          val <- -sum(lhaz0) +
+            sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
+          return(val)
+        }
+      }
 
-LLMLE <- function(init, times, status, hstr = "LL", des = NULL, des_t = NULL, method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+      # LogNormal
+      if (dist == "LogNormal") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p)]
 
-  # LL model
-  if(hstr == "LL"){
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);
-      haz0 <- hllogis(times.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chllogis(times,ae0,be0))
-      return(val)
-    }
-  }
-  # PH model
-  if(hstr == "LLPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hllogis(times.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chllogis(times,ae0,be0)*exp.x.beta)
-      return(val)
-    }
-  }
-  # AFT Model
-  if(hstr == "LLAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hllogis(times.obs*exp.x.beta.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chllogis(times*exp.x.beta,ae0,be0))
-      return(val)
-    }
-  }
-  # AH Model
-  if(hstr == "LLAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   alpha <- par[3:(2+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hllogis(times.obs*exp.x.alpha.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chllogis(times*exp.x.alpha,ae0,be0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "LLGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- par[1]; be0 <- exp(par[2]);   alpha <- par[3:(2+p0)]; beta <- par[(3+p0):(2+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hllogis(times.obs*exp.x.alpha.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chllogis(times*exp.x.alpha,ae0,be0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
-#----------------------------------------------------------------------------------------
-#' GMLE function: Hazard Regression Models with Gamma (G) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (log(scale), log(shape), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           G without covariates ("G"),
-#'           AFT model with G baseline hazard ("GAFT"),
-#'           PH model with G baseline hazard ("GPH"),
-#'           AH model with G baseline hazard ("GAH"),
-#'           GH model with G baseline hazard ("GGH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
+          val <- -sum(lhaz0) +
+            sum(chlnorm(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
+          return(val)
+        }
+      }
 
-GMLE <- function(init, times, status, hstr = "G", des = NULL, des_t = NULL, method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+      # LogLogistic
+      if (dist == "LogLogistic") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p)]
 
-  # G model
-  if(hstr == "G"){
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);
-      haz0 <- hgamma(times.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chgamma(times,ae0,be0))
-      return(val)
-    }
-  }
-  # PH model
-  if(hstr == "GPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hgamma(times.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chgamma(times,ae0,be0)*exp.x.beta)
-      return(val)
-    }
-  }
-  # AFT Model
-  if(hstr == "GAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);   beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hgamma(times.obs*exp.x.beta.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chgamma(times*exp.x.beta,ae0,be0))
-      return(val)
-    }
-  }
-  # AH Model
-  if(hstr == "GAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);   alpha <- par[3:(2+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hgamma(times.obs*exp.x.alpha.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chgamma(times*exp.x.alpha,ae0,be0)/exp.x.alpha)
-      return(val)
-    }
-  }
-  # GH Model
-  if(hstr == "GGH"){
-    p0 <- dim(des_t)[2]
-    p1 <- dim(des)[2]
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);   alpha <- par[3:(2+p0)]; beta <- par[(3+p0):(2+p0+p1)]
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.dif <- as.vector(exp( des%*%beta - des_t%*%alpha ))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hgamma(times.obs*exp.x.alpha.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chgamma(times*exp.x.alpha,ae0,be0)*exp.x.beta.dif)
-      return(sum(val))
-    }
-  }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
-#----------------------------------------------------------------------------------------
-#' WMLE function: Hazard Regression Models with Weibull (W) baseline hazard
-#----------------------------------------------------------------------------------------
-#' @param init    : initial point for optimisation step
-#' under the parameterisation (log(scale), log(shape), alpha, beta)
-#' @param hstr    : hazard structure:
-#'           W without covariates ("W"),
-#'           AFT model with W baseline hazard ("WAFT"),
-#'           PH model with W baseline hazard ("WPH"),
-#'           AH model with W baseline hazard ("WAH")
-#' @param method  : "nlminb" or optimisation method to be used in optim (see ?optim)
-#' @param maxit   : maximum number of iterations in optim or nlminb
-#' @param times   : times to event
-#' @param status    : vital status indicators (TRUE or 1 = observed, FALSE  or 0 = censored)
-#' @param des     : design matrix for hazard-level effects
-#' @param des_t   : design matrix for time-level effects (it is recommended not to use splines here)
-#' @return It returns the output from optim or nlminb for the selected model and the negative log likelihood function
+          val <- -sum(lhaz0) +
+            sum(chllogis(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
+          return(val)
+        }
+      }
 
-WMLE <- function(init, times, status, hstr = "W", des = NULL, des_t = NULL, method = "Nelder-Mead", maxit = 100){
-  # Required variables
-  times <- as.vector(times)
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  if(!is.null(des)) des <- as.matrix(des); des.obs <- des[status,]
-  if(!is.null(des_t)) des_t <- as.matrix(des_t); des_t.obs <- des_t[status,]
+      # Gamma
+      if (dist == "Gamma") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p)]
 
-  # PGW model
-  if(hstr == "W"){
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);
-      haz0 <- hweibull(times.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chweibull(times,ae0,be0))
-      return(val)
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) +
+            sum(chgamma(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
+          return(val)
+        }
+      }
+
+      # Weibull
+      if (dist == "Weibull") {
+        p <- ncol(des_t)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p)]
+
+          exp.x.alpha <- as.vector(exp(des_t %*% alpha))
+          exp.x.alpha.obs <- exp.x.alpha[status]
+          lhaz0 <- hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+
+          val <- -sum(lhaz0) +
+            sum(chweibull(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
+          return(val)
+        }
+      }
+
     }
-  }
-  # PH model
-  if(hstr == "WPH"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]);  beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hweibull(times.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chweibull(times,ae0,be0)*exp.x.beta)
-      return(val)
+
+    #------------------------------------------------------------------------------------
+    # General Hazards models
+    #------------------------------------------------------------------------------------
+
+    if (hstr == "GH") {
+
+      # PGW
+      if (dist == "PGW") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p0)]
+          beta <- par[(4 + p0):(3 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
+
+      # EW
+      if (dist == "EW") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p0)]
+          beta <- par[(4 + p0):(3 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chew(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
+
+      # GenGamma
+      if (dist == "GenGamma") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          alpha <- par[4:(3 + p0)]
+          beta <- par[(4 + p0):(3 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          val <-  -sum(lhaz0) +
+            sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
+
+      # LogNormal
+      if (dist == "LogNormal") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p0)]
+          beta <- par[(3 + p0):(2 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chlnorm(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
+
+      # LogLogistic
+      if (dist == "LogLogistic") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p0)]
+          beta <- par[(3 + p0):(2 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chllogis(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
+
+      # Gamma
+      if (dist == "Gamma") {
+        p0 <- dim(des_t)[2]
+        p1 <- dim(des)[2]
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          alpha <- par[3:(2 + p0)]
+          beta <- par[(3 + p0):(2 + p0 + p1)]
+
+          x.alpha <- des_t %*% alpha
+          x.beta <- des %*% beta
+          x.alpha.obs <- x.alpha[status]
+          x.beta.obs <- x.beta[status]
+          exp.x.alpha <- as.vector(exp(x.alpha))
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.dif <-  as.vector(exp(x.beta - x.alpha))
+          exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
+          exp.x.beta.obs <- as.vector(exp.x.beta[status])
+
+          lhaz0 <- hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+
+          val <- -sum(lhaz0) +
+            sum(chgamma(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
+          return(sum(val))
+        }
+      }
     }
-  }
-  # AFT Model
-  if(hstr == "WAFT"){
-    p <- ncol(des)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]); beta <- par[3:(2+p)];
-      exp.x.beta <- as.vector(exp(des%*%beta))
-      exp.x.beta.obs <- exp.x.beta[status]
-      haz0 <- hweibull(times.obs*exp.x.beta.obs,ae0,be0)*exp.x.beta.obs
-      val <- - sum(log(haz0)) + sum(chweibull(times*exp.x.beta,ae0,be0))
-      return(val)
+
+    #------------------------------------------------------------------------------------
+    # Optimisation step
+    #------------------------------------------------------------------------------------
+
+    if (method != "nlminb") {
+      OPT <- optim(init,
+                   log.lik,
+                   control = list(maxit = maxit),
+                   method = method)
     }
-  }
-  # AH Model
-  if(hstr == "WAH"){
-    p <- ncol(des_t)
-    log.lik <- function(par){
-      ae0 <- exp(par[1]); be0 <- exp(par[2]); alpha <- par[3:(2+p)];
-      exp.x.alpha <- as.vector(exp(des_t%*%alpha))
-      exp.x.alpha.obs <- exp.x.alpha[status]
-      haz0 <- hweibull(times.obs*exp.x.alpha.obs,ae0,be0)
-      val <- - sum(log(haz0)) + sum(chweibull(times*exp.x.alpha,ae0,be0)/exp.x.alpha)
-      return(val)
+    if (method == "nlminb") {
+      OPT <- nlminb(init, log.lik, control = list(iter.max = maxit))
     }
+
+    #------------------------------------------------------------------------------------
+    # Output
+    #------------------------------------------------------------------------------------
+    OUT <- list(log_lik = log.lik, OPT = OPT)
+    return(OUT)
   }
-  if(method != "nlminb") OPT <- optim(init,log.lik,control=list(maxit=maxit),method=method)
-  if(method == "nlminb") OPT <- nlminb(init,log.lik,control=list(iter.max=maxit))
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
 
 
 #----------------------------------------------------------------------------------------
@@ -1081,7 +1215,7 @@ Conf_Int <- function(FUN,MLE,level=0.95,index=NULL){
 #----------------------------------------------------------------------------------------
 #' simGH function: Function to simulate times to event from a model with a GH structure
 #' for different parametric baseline hazards.
-#' Distributions: LN, LL, GG, G (Gamma), W (Weibull), PGW, EW. 
+#' Distributions: LN, LL, GG, G (Gamma), W (Weibull), PGW, EW.
 #' See: https://github.com/FJRubio67/HazReg
 #----------------------------------------------------------------------------------------
 #' @param seed  : seed for simulation
@@ -1094,17 +1228,17 @@ Conf_Int <- function(FUN,MLE,level=0.95,index=NULL){
 #' @param des_t : Design matrix for GH model (time scale)
 #' @param des : Design matrix for AFT, PH, and AH models
 #' @param hstr  : hazard structure (AH, AFT, PH, GH)
-#' @param baseline  : baseline hazard distribution 
+#' @param baseline  : baseline hazard distribution
 #' @return a vector containing the simulated times to event
 #' @export
 #----------------------------------------------------------------------------------------
-simGH <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta, 
+simGH <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta,
                   beta_h = NULL, beta_t = NULL, beta = NULL, hstr, baseline){
-  
+
   if(!is.null(des))   des <- as.matrix(des)
   if(!is.null(des_h)) des_h <- as.matrix(des_h)
   if(!is.null(des_t)) des_t <- as.matrix(des_t)
-  
+
   # Baseline hazard
   if(baseline == "LN")      quantf <- function(p) qlnorm(p, theta[1], theta[2])
   if(baseline == "LL")      quantf <- function(p) qllogis(p, theta[1], theta[2])
@@ -1113,55 +1247,55 @@ simGH <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta,
   if(baseline == "PGW")     quantf <- function(p) qpgw(p, theta[1], theta[2], theta[3])
   if(baseline == "EW")      quantf <- function(p) qew(p, theta[1], theta[2], theta[3])
   if(baseline == "GG")      quantf <- function(p) qggamma(p, theta[1], theta[2], theta[3])
-  
+
   # Uniform variates used in the simulation
   set.seed(seed)
   u = runif(n)
-  
+
   # GH simulation
   if( hstr == "GH" ){
     # Linear predictors
     exp.xbeta_t  <- exp(des_t%*%beta_t)
     exp.dif <- exp(des_t%*%beta_t - des_h%*%beta_h )
-    
+
     # Simulating the times to event
     p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
     times <- as.vector(quantf(p0)/exp.xbeta_t)
   }
-  
+
   # PH simulation
   if( hstr == "PH" ){
     # Linear predictors
     exp.xbeta_t  <- 1
     exp.dif <- exp( - des%*%beta )
-    
+
     # Simulating the times to event
     p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
     times <- as.vector(quantf(p0)/exp.xbeta_t)
   }
-  
+
   # AFT simulation
   if( hstr == "AFT" ){
     # Linear predictors
     exp.xbeta_t  <- exp(des%*%beta)
     exp.dif <- 1
-    
+
     # Simulating the times to event
     p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
     times <- as.vector(quantf(p0)/exp.xbeta_t)
   }
-  
+
   # AH simulation
   if( hstr == "AH" ){
     # Linear predictors
     exp.xbeta_t  <- exp(des%*%beta)
     exp.dif <- exp(des%*%beta)
-    
+
     # Simulating the times to event
     p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
     times <- as.vector(quantf(p0)/exp.xbeta_t)
   }
-  
+
   return(as.vector(times))
 }
 
