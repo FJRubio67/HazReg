@@ -35,9 +35,9 @@ All positive parameters are transformed into the real line using a `log` reparam
 
 An Illustrative example and a description of the available models can be found at:
 
-[HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg) [RPubs]
-
-[HazReg: Parametric Hazard-based regression models for survival data](https://fjrubio.quarto.pub/hazreg/) [quarto-pub]
+- [HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg) [RPubs]
+- [HazReg: Parametric Hazard-based regression models for survival data](https://fjrubio.quarto.pub/hazreg/) [quarto-pub]
+- [simGH: simulating times to event from a general hazard structure](https://rpubs.com/FJRubio/simGH)
 
 ```
 library(devtools)
@@ -48,7 +48,11 @@ library(HazReg)
 ?GGMLE
 ?hpgw
 ?hggama
+
+?simGH
 ```
 
-See also: [Short course on Parametric Survival Analysis
+See also: 
+- [Simulating survival times from a General Hazard structure with a flexible baseline hazard](https://rpubs.com/FJRubio/GHSim)
+- [Short course on Parametric Survival Analysis
 ](https://github.com/FJRubio67/ShortCourseParamSurvival)
