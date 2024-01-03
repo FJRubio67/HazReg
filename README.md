@@ -24,9 +24,9 @@ The current version of the `HazReg` R package implements the following parametri
 
 - [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (Gamma) distribution. 
 
-- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution. 
+- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LogNormal) distribution. 
 
-- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution. 
+- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LogLogistic) distribution. 
 
 - [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (Weibull) distribution. (only for AFT, PH, and AH models) 
 
