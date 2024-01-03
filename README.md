@@ -20,15 +20,15 @@ The current version of the `HazReg` R package implements the following parametri
  
 - [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution. 
  
-- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton. 
+- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GenGamma) distribuiton. 
 
-- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution. 
+- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (Gamma) distribution. 
 
 - [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution. 
 
 - [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution. 
 
-- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. (only for AFT, PH, and AH models) 
+- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (Weibull) distribution. (only for AFT, PH, and AH models) 
 
 
 All positive parameters are transformed into the real line using a `log` link (reparameterisation).
