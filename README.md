@@ -14,24 +14,24 @@ The `HazReg` R package implements the following parametric hazard-based regressi
 These models are fitted using the R commands `nlminb` and `optim`. Thus, the user needs to specify the initial points and to check the convergence of the optimisation step, as usual.
 
 
-The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section.
+The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section, using the command `GHMLE`.
 
-- [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution. `PGWMLE`
+- [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution. 
  
-- [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution. `EWMLE`
+- [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution. 
  
-- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton. `GGMLE`
+- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton. 
 
-- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution. `GMLE`
+- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution. 
 
-- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution. `LNMLE`
+- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution. 
 
-- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution. `LLMLE`
+- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution. 
 
-- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. (only for AFT, PH, and AH models) `WMLE`
+- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. (only for AFT, PH, and AH models) 
 
 
-All positive parameters are transformed into the real line using a `log` reparameterisation.
+All positive parameters are transformed into the real line using a `log` link (reparameterisation).
 
 An Illustrative example and a description of the available models can be found at:
 
@@ -44,9 +44,11 @@ library(devtools)
 install_github("FJRubio67/HazReg")
 
 library(HazReg)
-?PGWMLE
-?GGMLE
+
+?GHMLE
+
 ?hpgw
+
 ?hggama
 
 ?simGH
