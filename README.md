@@ -56,5 +56,5 @@ library(HazReg)
 
 See also: 
 - [Simulating survival times from a General Hazard structure with a flexible baseline hazard](https://rpubs.com/FJRubio/GHSim)
-- [Short course on Parametric Survival Analysis
-](https://github.com/FJRubio67/ShortCourseParamSurvival)
+- [Short course on Parametric Survival Analysis](https://github.com/FJRubio67/ShortCourseParamSurvival)
+-[HazReg.jl](https://github.com/FJRubio67/HazReg.jl)
