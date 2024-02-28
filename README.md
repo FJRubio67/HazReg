@@ -56,7 +56,7 @@ library(HazReg)
 ?simGH
 ```
 
-## Relative Survival
+## Relative (Net) Survival
 
 Forthcoming
 
