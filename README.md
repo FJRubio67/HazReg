@@ -1,8 +1,8 @@
 # HazReg R package
 
-## Overall Survival
+## Overall and Relative (Net) Survival
 
-The `HazReg` R package implements the following parametric hazard-based regression models for (overall) survival data.
+The `HazReg` R package implements the following parametric hazard-based regression models for survival data, in the overall and relative survival frameworks.
 
 - General Hazard (GH) model.
 
@@ -16,7 +16,7 @@ The `HazReg` R package implements the following parametric hazard-based regressi
 These models are fitted using the R commands `nlminb` and `optim`. Thus, the user needs to specify the initial points and to check the convergence of the optimisation step, as usual.
 
 
-The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section, using the command `GHMLE`.
+The current version of the `HazReg` R package implements the following parametric baseline hazards for the models discussed in the previous section, using the commands `GHMLE` and `GEHMLE`.
 
 - [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution. 
  
@@ -39,6 +39,7 @@ An Illustrative example and a description of the available models can be found a
 
 - [HazReg: Parametric Hazard-based regression models for survival data](https://rpubs.com/FJRubio/HazReg) [RPubs]
 - [HazReg: Parametric Hazard-based regression models for survival data](https://fjrubio.quarto.pub/hazreg/) [quarto-pub]
+- [HazReg: Parametric Excess Hazard-based regression models for survival data](https://rpubs.com/FJRubio/XHazReg)
 - [simGH: simulating times to event from a general hazard structure](https://rpubs.com/FJRubio/simGH)
 
 ```
@@ -49,6 +50,8 @@ library(HazReg)
 
 ?GHMLE
 
+?GEHMLE
+
 ?hpgw
 
 ?hggama
@@ -56,9 +59,6 @@ library(HazReg)
 ?simGH
 ```
 
-## Relative (Net) Survival
-
-Forthcoming
 
 ### See also: 
 - [Simulating survival times from a General Hazard structure with a flexible baseline hazard](https://rpubs.com/FJRubio/GHSim)
