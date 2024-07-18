@@ -1368,6 +1368,7 @@ GEHMLE <-
     }
     hp <- as.vector(hp)
     hp.obs <- as.vector(hp[status])
+    lhp.obs <- log(hp.obs)
 
     #------------------------------------------------------------------------------------
     # baseline models
@@ -1381,7 +1382,8 @@ GEHMLE <-
           be0 <- exp(par[2])
           ce0 <- exp(par[3])
 
-          lhaz0 <- log(hp.obs + hpgw(times.obs, ae0, be0, ce0))
+          MAT = cbind(lhp.obs , hpgw(times.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chpgw(times, ae0, be0, ce0))
           return(val)
@@ -1395,7 +1397,8 @@ GEHMLE <-
           be0 <- exp(par[2])
           ce0 <- exp(par[3])
 
-          lhaz0 <- log(hp.obs + hew(times.obs, ae0, be0, ce0))
+          MAT <- cbind(lhp.obs , hew(times.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chew(times, ae0, be0, ce0))
           return(val)
@@ -1409,7 +1412,8 @@ GEHMLE <-
           be0 <- exp(par[2])
           ce0 <- exp(par[3])
 
-          lhaz0 <- log(hp.obs + hggamma(times.obs, ae0, be0, ce0))
+          MAT <- cbind(lhp.obs , hggamma(times.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chggamma(times, ae0, be0, ce0))
           return(val)
@@ -1422,7 +1426,8 @@ GEHMLE <-
           ae0 <- par[1]
           be0 <- exp(par[2])
 
-          lhaz0 <- log(hp.obs + hlnorm(times.obs, ae0, be0))
+          MAT <- cbind(lhp.obs , hlnorm(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0))
           return(val)
@@ -1435,7 +1440,8 @@ GEHMLE <-
           ae0 <- par[1]
           be0 <- exp(par[2])
 
-          lhaz0 <- log(hp.obs + hllogis(times.obs, ae0, be0))
+          MAT <- cbind(lhp.obs , hllogis(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0))
           return(val)
@@ -1448,7 +1454,8 @@ GEHMLE <-
           ae0 <- exp(par[1])
           be0 <- exp(par[2])
 
-          lhaz0 <- log(hp.obs + hgamma(times.obs, ae0, be0))
+          MAT <- cbind(lhp.obs , hgamma(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chgamma(times, ae0, be0))
           return(val)
@@ -1461,7 +1468,8 @@ GEHMLE <-
           ae0 <- exp(par[1])
           be0 <- exp(par[2])
 
-          lhaz0 <- log(hp.obs + hweibull(times.obs, ae0, be0))
+          MAT <- cbind(lhp.obs , hweibull(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chweibull(times, ae0, be0))
           return(val)
@@ -1491,7 +1499,9 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs + hpgw(times.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hpgw(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times, ae0, be0, ce0) * exp.x.beta)
@@ -1511,7 +1521,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hew(times.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hew(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times, ae0, be0, ce0) * exp.x.beta)
@@ -1531,7 +1543,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hggamma(times.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hggamma(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chggamma(times, ae0, be0, ce0) * exp.x.beta)
@@ -1550,7 +1564,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hlnorm(times.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hlnorm(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
           return(val)
@@ -1568,7 +1584,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hllogis(times.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hllogis(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
           return(val)
@@ -1586,7 +1604,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hgamma(times.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hgamma(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times, ae0, be0) * exp.x.beta)
@@ -1605,7 +1625,9 @@ GEHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- log( hp.obs + hweibull(times.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs , hweibull(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times, ae0, be0) * exp.x.beta)
@@ -1634,8 +1656,10 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.beta, ae0, be0, ce0))
@@ -1656,8 +1680,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hew(times.obs * exp.x.beta.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.beta, ae0, be0, ce0))
@@ -1678,8 +1705,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.beta, ae0, be0, ce0))
@@ -1699,8 +1729,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hlnorm(times.obs * exp.x.beta.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chlnorm(times * exp.x.beta, ae0, be0))
@@ -1720,8 +1753,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hllogis(times.obs * exp.x.beta.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.beta, ae0, be0))
@@ -1741,8 +1777,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hgamma(times.obs * exp.x.beta.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.beta, ae0, be0))
@@ -1762,8 +1801,11 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- log( hp.obs +
-                          hweibull(times.obs * exp.x.beta.obs, ae0, be0)*exp(x.beta.obs))
+
+          MAT <- cbind(lhp.obs ,
+                         hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.beta, ae0, be0))
@@ -1790,8 +1832,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0))
+
+          MAT <- cbind(lhp.obs ,
+                         hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1810,8 +1854,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0))
+
+          MAT <- cbind(lhp.obs ,
+                         hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1830,8 +1876,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0))
+
+          MAT <- cbind(lhp.obs ,
+                         hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1849,8 +1897,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hlnorm(times.obs * exp.x.alpha.obs, ae0, be0))
+
+          MAT <- cbind(lhp.obs ,
+                         hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1868,8 +1918,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hllogis(times.obs * exp.x.alpha.obs, ae0, be0))
+
+          MAT <- cbind(lhp.obs ,
+                         hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1887,8 +1939,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hgamma(times.obs * exp.x.alpha.obs, ae0, be0))
+
+          MAT <- cbind(lhp.obs ,
+                         hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1906,8 +1960,10 @@ GEHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- log( hp.obs +
-                          hweibull(times.obs * exp.x.alpha.obs, ae0, be0))
+
+          MAT <- cbind(lhp.obs ,
+                         hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1944,8 +2000,9 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -1974,8 +2031,9 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -2004,8 +2062,10 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -2033,8 +2093,10 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hlnorm(times.obs * exp.x.alpha.obs, ae0, be0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -2062,8 +2124,10 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hllogis(times.obs * exp.x.alpha.obs, ae0, be0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -2091,8 +2155,10 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- log(hp.obs +
-                         hgamma(times.obs * exp.x.alpha.obs, ae0, be0)*exp(x.beta.obs))
+          MAT <- cbind(lhp.obs ,
+                         hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                         x.beta.obs)
+          lhaz0 <- apply(MAT,1,logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
