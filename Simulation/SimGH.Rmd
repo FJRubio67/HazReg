@@ -1,0 +1,271 @@
+---
+title: "simGH: simulating times to event from a general hazard structure"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+bibliography: references.bib
+---
+
+# The `simGH` command.
+The simGH command from the `HazReg` R package allows one to simulate times to event from the following models:
+
+- General Hazard (GH) model [@chen:2001] [@rubio:2019].
+
+- Accelerated Failure Time (AFT) model [@kalbfleisch:2011].
+
+- Proportional Hazards (PH) model [@cox:1972].
+
+- Accelerated Hazards (AH) model [@chen:2000].
+
+
+A description of these hazard models is presented below as well as the available baseline hazards.
+
+## General Hazard model
+The GH model is formulated in terms of the hazard structure
+\[
+h(t; \alpha, \beta, \theta, {\bf x}) = h_0\left(t  \exp\{\tilde{\bf x}^{\top}\alpha\}; \theta\right) \exp\{{\bf x}^{\top}\beta\}.
+\]
+where ${\bf x}\in{\mathbb R}^p$ are the covariates that affect the hazard level; $\tilde{\bf x} \in {\mathbb R}^q$ are the covariates the affect the time level (typically $\tilde{\bf x} \subset {\bf x}$); $\alpha \in {\mathbb R}^q$ and $\beta \in {\mathbb R}^p$ are the regression coefficients; and $\theta \in \Theta$ is the vector of parameters of the baseline hazard $h_0(\cdot)$.
+
+This hazard structure leads to an identifiable model as long as the baseline hazard is not a hazard associated to a member of the Weibull family of distributions [@chen:2001]. 
+
+## Accelerated Failure Time (AFT) model
+The AFT model is formulated in terms of the hazard structure
+\[
+h(t; \beta, \theta, {\bf x}) = h_0\left(t  \exp\{{\bf x}^{\top}\beta\}; \theta\right) \exp\{{\bf x}^{\top}\beta\}.
+\]
+where ${\bf x}\in{\mathbb R}^p$ are the available covariates; $\beta \in {\mathbb R}^p$ are the regression coefficients; and $\theta \in \Theta$ is the vector of parameters of the baseline hazard $h_0(\cdot)$.
+
+## Proportional Hazards (PH) model
+The PH model is formulated in terms of the hazard structure
+\[
+h(t; \beta, \theta, {\bf x}) = h_0\left(t ; \theta\right) \exp\{{\bf x}^{\top}\beta\}.
+\]
+where ${\bf x}\in{\mathbb R}^p$ are the available covariates; $\beta \in {\mathbb R}^p$ are the regression coefficients; and $\theta \in \Theta$ is the vector of parameters of the baseline hazard $h_0(\cdot)$.
+
+## Accelerated Hazards (AH) model
+The AH model is formulated in terms of the hazard structure
+\[
+h(t; \alpha, \theta, \tilde{\bf x}) = h_0\left(t \exp\{\tilde{\bf x}^{\top}\alpha\}; \theta\right) .
+\]
+where $\tilde{\bf x}\in{\mathbb R}^q$ are the available covariates; $\alpha \in {\mathbb R}^q$ are the regression coefficients; and $\theta \in \Theta$ is the vector of parameters of the baseline hazard $h_0(\cdot)$.
+
+# Available baseline hazards
+The current version of the `simGH` command implements the following parametric baseline hazards for the models discussed in the previous section.
+
+- [Power Generalised Weibull](http://rpubs.com/FJRubio/PGW) (PGW) distribution.
+
+- [Exponentiated Weibull](http://rpubs.com/FJRubio/EWD) (EW) distribution.
+
+- [Generalised Gamma](http://rpubs.com/FJRubio/GG) (GG) distribuiton.
+
+- [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution) (G) distribution.
+
+- [Lognormal](https://en.wikipedia.org/wiki/Log-normal_distribution) (LN) distribution.
+
+- [Log-logistic](https://en.wikipedia.org/wiki/Log-logistic_distribution) (LL) distribution.
+
+- [Weibull](https://en.wikipedia.org/wiki/Weibull_distribution) (W) distribution. (only for AFT, PH, and AH models)
+
+
+# Illustrative example: R code
+In this example, we simulate $n=1,000$ times to event from the GH, PH, AFT, and AH models with PGW baseline hazards, using the `simGH` command. We censor these samples at a fixed value, and fit the corresponding models using the R package `HazReg`.
+
+See also: [HazReg](https://github.com/FJRubio67/HazReg)
+
+## PGW-GH model
+```{r}
+rm(list=ls())
+
+# Required packages
+#library(devtools)
+#install_github("FJRubio67/HazReg")
+library(HazReg)
+
+# Sample size
+n <- 1000
+
+# Simulated design matrices
+set.seed(1234)
+x <- as.matrix(cbind(rnorm(n), rnorm(n)))
+xt <- as.matrix(rnorm(n))
+
+#----------------------------
+# PGW-GH simulation
+#----------------------------
+
+# True parameters
+theta0 <- c(0.1,2,5)
+betat0 <- c(0.5)
+betah0 <- c(-0.5,0.75)
+
+# censoring
+cens <- 10
+
+# Data simulation
+simdat <- simGH(seed = 1234, n = n, des_h = x, des_t = xt,
+      theta = theta0, beta_t = betat0, beta_h = betah0, hstr = "GH", baseline = "PGW")
+
+# status variable
+status <- (simdat < cens)
+
+# Inducing censoring
+simdat <- ifelse(simdat < cens, simdat, cens)
+
+# Model fit
+OPTPGWGH <- GHMLE(init = rep(0, 3 + ncol(x) + ncol(xt)), times = simdat, status = status,
+                   hstr = "GH", dist = "PGW", des = x, des_t = xt, method = "nlminb", maxit = 10000)
+
+MLEPGWGH <- c(exp(OPTPGWGH$OPT$par[1:3]),OPTPGWGH$OPT$par[-c(1:3)])
+
+# True parameter values vs. MLE
+cbind(c(theta0,betat0,betah0),MLEPGWGH)
+
+```
+
+## PGW-PH model
+```{r}
+rm(list=ls())
+
+# Required packages
+#library(devtools)
+#install_github("FJRubio67/HazReg")
+library(HazReg)
+
+# Sample size
+n <- 1000
+
+# Simulated design matrices
+set.seed(1234)
+x <- as.matrix(cbind(rnorm(n), rnorm(n)))
+
+#----------------------------
+# PGW-PH simulation
+#----------------------------
+
+# True parameters
+theta0 <- c(0.1,2,5)
+beta0 <- c(-0.5,0.75)
+
+# censoring
+cens <- 10
+
+# Data simulation
+simdat <- simGH(seed = 1234, n = n, des = x,
+                theta = theta0, beta = beta0, hstr = "PH", baseline = "PGW")
+
+# status variable
+status <- (simdat < cens)
+
+# Inducing censoring
+simdat <- ifelse(simdat < cens, simdat, cens)
+
+# Model fit
+OPTPGWPH <- GHMLE(init = rep(0, 3 + ncol(x) ), times = simdat, status = status,
+                   hstr = "PH", dist = "PGW", des = x, method = "nlminb", maxit = 10000)
+
+MLEPGWPH <- c(exp(OPTPGWPH$OPT$par[1:3]),OPTPGWPH$OPT$par[-c(1:3)])
+
+# True parameter values vs. MLE
+cbind(c(theta0,beta0),MLEPGWPH)
+
+```
+
+## PGW-AFT model
+```{r}
+rm(list=ls())
+
+# Required packages
+#library(devtools)
+#install_github("FJRubio67/HazReg")
+library(HazReg)
+
+# Sample size
+n <- 1000
+
+# Simulated design matrices
+set.seed(1234)
+x <- as.matrix(cbind(rnorm(n), rnorm(n)))
+
+#----------------------------
+# PGW-AFT simulation
+#----------------------------
+
+# True parameters
+theta0 <- c(0.1,2,5)
+beta0 <- c(-0.5,0.75)
+
+# censoring
+cens <- 10
+
+# Data simulation
+simdat <- simGH(seed = 1234, n = n, des = x,
+                theta = theta0, beta = beta0, hstr = "AFT", baseline = "PGW")
+
+# status variable
+status <- (simdat < cens)
+
+# Inducing censoring
+simdat <- ifelse(simdat < cens, simdat, cens)
+
+# Model fit
+OPTPGWAFT <- GHMLE(init = rep(0, 3 + ncol(x) ), times = simdat, status = status,
+                   hstr = "AFT", dist = "PGW", des = x, method = "nlminb", maxit = 10000)
+
+MLEPGWAFT <- c(exp(OPTPGWAFT$OPT$par[1:3]),OPTPGWAFT$OPT$par[-c(1:3)])
+
+# True parameter values vs. MLE
+cbind(c(theta0,beta0),MLEPGWAFT)
+
+```
+
+## PGW-AH model
+```{r}
+rm(list=ls())
+
+# Required packages
+#library(devtools)
+#install_github("FJRubio67/HazReg")
+library(HazReg)
+
+# Sample size
+n <- 1000
+
+# Simulated design matrices
+set.seed(1234)
+x <- as.matrix(cbind(rnorm(n), rnorm(n)))
+
+#----------------------------
+# PGW-AH simulation
+#----------------------------
+
+# True parameters
+theta0 <- c(0.1,2,5)
+beta0 <- c(-0.5,0.75)
+
+# censoring
+cens <- 10
+
+# Data simulation
+simdat <- simGH(seed = 1234, n = n, des = x,
+                theta = theta0, beta = beta0, hstr = "AH", baseline = "PGW")
+
+# status variable
+status <- (simdat < cens)
+
+# Inducing censoring
+simdat <- ifelse(simdat < cens, simdat, cens)
+
+# Model fit
+OPTPGWAH <- GHMLE(init = rep(0, 3 + ncol(x) ), times = simdat, status = status,
+                   hstr = "AH", dist = "PGW", des_t = x, method = "nlminb", maxit = 10000)
+
+MLEPGWAH <- c(exp(OPTPGWAH$OPT$par[1:3]),OPTPGWAH$OPT$par[-c(1:3)])
+
+# True parameter values vs. MLE
+cbind(c(theta0,beta0),MLEPGWAH)
+
+```
