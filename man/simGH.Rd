@@ -4,7 +4,7 @@
 \alias{simGH}
 \title{simGH function: Function to simulate times to event from a model with a GH structure
 for different parametric baseline hazards.
-Distributions: LN, LL, GG, G (Gamma), W (Weibull), PGW, EW.
+Distributions: LogNormal, LogLogistic, GenGamma, Gamma, Weibull, PGW, EW.
 See: https://github.com/FJRubio67/HazReg}
 \usage{
 simGH(
@@ -50,6 +50,6 @@ a vector containing the simulated times to event
 \description{
 simGH function: Function to simulate times to event from a model with a GH structure
 for different parametric baseline hazards.
-Distributions: LN, LL, GG, G (Gamma), W (Weibull), PGW, EW.
+Distributions: LogNormal, LogLogistic, GenGamma, Gamma, Weibull, PGW, EW.
 See: https://github.com/FJRubio67/HazReg
 }
