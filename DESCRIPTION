@@ -1,11 +1,10 @@
 Package: HazReg
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Parametric hazard-based regression models
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: F. Javier Rubio
+Maintainer: F. Javier Rubio <fxrubio@gmail.com>
+Description: The HazReg R package implements the following parametric hazard-based regression models for survival data, in the overall and relative survival frameworks.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
