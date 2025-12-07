@@ -1,4 +1,4 @@
-GHMLE_TVC <- function (init, times, status, hstr = NULL, dist = NULL, des = NULL, 
+HMLE_TVC <- function (init, times, status, hstr = NULL, dist = NULL, des = NULL, 
           des_t = NULL, method = "Nelder-Mead", maxit = 100) 
 {
   times <- as.vector(times)
