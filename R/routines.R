@@ -395,6 +395,161 @@ rggamma <- function(n, sigma, nu, gamma){
 }
 
 
+#----------------------------------------------------------------------------------------
+#' Compute the Cumulative Hazard for a Proportional Hazards Model (2-parameter baseline)
+#'
+#' Computes the cumulative hazard \eqn{H(t \mid x(t))} at multiple time points
+#' for each individual under a proportional hazards (PH) model with a
+#' two-parameter parametric baseline hazard.
+#'
+#' The model assumes
+#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0)\exp(x(t)^\top \beta).}
+#'
+#' @param df A data frame containing:
+#'   \itemize{
+#'     \item `time`: numeric vector of time points.
+#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
+#'           representing \eqn{x(t)}.
+#'   }
+#' @param beta Numeric vector of regression coefficients.
+#' @param ae0,be0 Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, ae0, be0)`.
+#'
+#' @return A numeric vector with the cumulative hazard evaluated at each time
+#'   point in `df`.
+#'
+#' @export
+#----------------------------------------------------------------------------------------
+
+compute_CHPH2 <- function(df, beta, ae0, be0, chfun) {
+
+  # Extract design matrix
+  Xmat <- as.matrix(df[, grep("^des", names(df))])
+
+  # exp(x beta)
+  exp_xb <- exp(Xmat %*% beta)
+
+  # baseline cumulative hazard at each time
+  ch0_t <- chfun(df$time, ae0, be0)
+
+  # final cumulative hazard contribution
+  CH_t <- as.vector(ch0_t * exp_xb)
+
+  return(CH_t)
+}
+
+
+#----------------------------------------------------------------------------------------
+#' Compute the Cumulative Hazard for a Proportional Hazards Model (3-parameter baseline)
+#'
+#' Same as \code{compute_CHPH2} but for baseline cumulative hazard functions
+#' depending on three parameters \eqn{(a_0, b_0, c_0)}.
+#'
+#' The PH structure is
+#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
+#'
+#' @param beta Numeric vector of regression coefficients.
+#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, ae0, be0, ce0)`.
+#'
+#' @return Numeric vector of cumulative hazard values.
+#'
+#' @export
+#----------------------------------------------------------------------------------------
+
+compute_CHPH3 <- function(df, beta, ae0, be0, ce0, chfun) {
+
+  # Extract design matrix
+  Xmat <- as.matrix(df[, grep("^des", names(df))])
+
+  # exp(x beta)
+  exp_xb <- exp(Xmat %*% beta)
+
+  # baseline cumulative hazard at each time
+  ch0_t <- chfun(df$time, ae0, be0, ce0)
+
+  # final cumulative hazard contribution
+  CH_t <- as.vector(ch0_t * exp_xb)
+
+  return(CH_t)
+}
+
+
+
+#-------------------------------------------------------------------------------------------------
+#' Compute the Cumulative Hazard for an Accelerated Failure Time Model (2-parameter baseline)
+#'
+#' Computes the cumulative hazard under an accelerated failure time (AFT) model
+#' with a two-parameter baseline cumulative hazard function.
+#'
+#' In the AFT model, event time is rescaled as
+#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0).}
+#'
+#' @param beta Numeric vector of regression coefficients.
+#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, ae0, be0)`.
+#'
+#' @return Numeric vector of cumulative hazard values.
+#'
+#' @export
+#-------------------------------------------------------------------------------------------------
+
+compute_CHAFT2 <- function(df, beta, ae0, be0, chfun) {
+
+  # Extract design matrix
+  Xmat <- as.matrix(df[, grep("^des", names(df))])
+
+  # exp(x beta)
+  exp_xb <- exp(Xmat %*% beta)
+
+  # baseline cumulative hazard at each time * exp(x^T beta)
+  ch0_t <- chfun(df$time*exp_xb, ae0, be0)
+
+  # final cumulative hazard contribution
+  CH_t <- as.vector(ch0_t)
+
+  return(CH_t)
+}
+
+
+#-------------------------------------------------------------------------------------------------
+#' Compute the Cumulative Hazard for an Accelerated Failure Time Model (3-parameter baseline)
+#'
+#' Computes the cumulative hazard under an AFT model with a three-parameter
+#' parametric baseline hazard.
+#'
+#' The cumulative hazard is
+#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
+#'
+#' @param beta Numeric vector of regression coefficients.
+#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, ae0, be0, ce0)`.
+#'
+#' @return A numeric vector of cumulative hazard values.
+#'
+#' @export
+#-------------------------------------------------------------------------------------------------
+
+compute_CHAFT3 <- function(df, beta, ae0, be0, ce0, chfun) {
+
+  # Extract design matrix
+  Xmat <- as.matrix(df[, grep("^des", names(df))])
+
+  # exp(x beta)
+  exp_xb <- exp(Xmat %*% beta)
+
+  # baseline cumulative hazard at each time * exp(x^T beta)
+  ch0_t <- chfun(df$time*exp_xb, ae0, be0, ce0)
+
+  # final cumulative hazard contribution
+  CH_t <- as.vector(ch0_t)
+
+  return(CH_t)
+}
 
 #----------------------------------------------------------------------------------------
 #' GHMLE function: Hazard Regression Models with a parametric baseline hazard
