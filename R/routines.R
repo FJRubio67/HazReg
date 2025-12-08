@@ -488,7 +488,7 @@ compute_CHPH3 <- function(df, beta, ae0, be0, ce0, chfun) {
 #' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0).}
 #'
 #' @param beta Numeric vector of regression coefficients.
-#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param ae0,be0 Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
 #'   `chfun(time, ae0, be0)`.
 #'
@@ -1333,6 +1333,711 @@ GHMLE <-
     OUT <- list(log_lik = log.lik, OPT = OPT)
     return(OUT)
   }
+
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+#' Maximum Likelihood Estimation for Parametric Hazard Models with Time-Varying Covariates
+#'
+#' @description
+#' `HMLE_TVC()` fits parametric survival models in the presence of
+#' **time-varying covariates**, using maximum likelihood estimation.
+#'
+#' The function supports:
+#'
+#' * **Proportional Hazards (PH)** models with time-varying covariates
+#' * Fully parametric baseline hazards (2-parameter or 3-parameter)
+#'
+#' The likelihood is constructed from the cumulative hazard differences across
+#' observation intervals for each individual, using a counting-process representation.
+#'
+#' For each individual, the data must contain several rows:
+#' one per time-varying covariate measurement, along with the corresponding time.
+#'
+#----------------------------------------------------------------------------------------
+#' @param df
+#' A data frame in **long format**, containing one row per individual per
+#' covariate-measurement time. Required columns:
+#'
+#' * `ID` — individual identifier
+#' * `time` — time at which the covariates are measured
+#' * `status` — event indicator (1 = event at the final time; 0 = censored)
+#' * `des*` — covariate columns used in the model (e.g., `des1`, `des2`, …)
+#'
+#' The last row for each ID represents the individual's event/censoring time,
+#' even if the event time does not coincide with a measurement time.
+#'
+#----------------------------------------------------------------------------------------
+#' @param beta
+#' Numeric vector of regression coefficients associated with the
+#' time-varying covariate design matrix (`des*` columns).
+#'
+#----------------------------------------------------------------------------------------
+#' @param ae0, be0, ce0
+#' Baseline hazard parameters.
+#'
+#' * For **2-parameter** baselines, only `ae0` and `be0` are used.
+#' * For **3-parameter** baselines, all three are used.
+#'
+#' These parameters are passed directly to the user-supplied baseline
+#' cumulative hazard function `chfun()`.
+#'
+#----------------------------------------------------------------------------------------
+#' @param chfun
+#' A function computing the **baseline cumulative hazard**:
+#'
+#' * 2-parameter case: `chfun(time, ae0, be0)`
+#' * 3-parameter case: `chfun(time, ae0, be0, ce0)`
+#'
+#' The function must return a vector of values of equal length to `time`.
+#'
+#----------------------------------------------------------------------------------------
+#' @param method
+#' Optimisation method for the likelihood.
+#' Either `"nlminb"` or a valid `optim()` method.
+#'
+#' @param maxit
+#' Maximum number of optimisation iterations.
+#'
+#----------------------------------------------------------------------------------------
+#' @return
+#' A list containing:
+#'
+#' * The full output from `optim()` or `nlminb()`
+#' * The **negative log-likelihood function** used for optimisation
+#' * A vector giving, for each ID, the cumulative hazard increments used in the likelihood
+#'
+#' Returned invisibly where appropriate.
+#'
+#----------------------------------------------------------------------------------------
+#' @details
+#'
+#' ## Likelihood formulation
+#'
+#' For each individual \(i\), let
+#' \(t_{i1} < t_{i2} < \cdots < t_{iK_i}\)
+#' denote the *observation / measurement times*.
+#'
+#' The cumulative hazard contribution over interval \((t_{ij-1}, t_{ij})\) is:
+#'
+#' \deqn{
+#' \Delta H_{ij}
+#'   = \left[ H_0(t_{ij}) - H_0(t_{ij-1}) \right]
+#'     \exp(x_{ij}^\top \beta),
+#' }
+#'
+#' where \(x_{ij}\) is the vector of covariates measured at time \(t_{ij}\).
+#'
+#' The full log-likelihood is:
+#'
+#' \deqn{
+#' \ell = \sum_i \left(
+#'   - \sum_j \Delta H_{ij}
+#'   + \delta_i \log \left[
+#'        h_0(T_i) \exp(x_{iK}^\top \beta)
+#'     \right]
+#' \right),
+#' }
+#'
+#' where:
+#'
+#' * \(\Delta H_{ij}\) comes from cumulative hazard increments
+#' * \(T_i = t_{iK}\) is the final event or censoring time
+#' * \(\delta_i\) is the event indicator
+#' * hazard and cumulative hazard are computed from `chfun()`
+#'
+#' The function internally:
+#' 1. Splits the data by ID
+#' 2. Computes cumulative hazard at all measurement times
+#' 3. Computes increments \(\Delta H_{ij}\) for each ID
+#' 4. Constructs the likelihood
+#' 5. Optimises over \(\beta\) and baseline parameters
+#'
+#----------------------------------------------------------------------------------------
+#' @section Data structure:
+#' The input data frame must contain:
+#'
+#' * varying number of rows per ID
+#' * strictly increasing `time` within each ID
+#' * last row containing the event/censoring time
+#'
+#' Covariates must be named as `des1`, `des2`, etc.
+#'
+#----------------------------------------------------------------------------------------
+#' @export
+#----------------------------------------------------------------------------------------
+
+HMLE_TVC <- function (init, df, status, hstr = NULL, dist = NULL, des = NULL,
+                      method = "Nelder-Mead", maxit = 100)
+{
+
+  df <- df[order(df$ID, df$time), ]  # ensure sorted
+
+  times <- as.vector(with(df, tapply(time, ID, max)))
+
+  last_rows <- df[ave(df$time, df$ID, FUN = max) == df$time, ]
+  des <- as.matrix(last_rows[, grep("^des", names(df))])
+
+
+  status <- as.vector(as.logical(status))
+  times.obs <- times[status]
+  des_obs <- des[status, ]
+
+
+  #-------------------------------------------------------------------------------
+  # PH
+  #-------------------------------------------------------------------------------
+  if (hstr == "PH") {
+    if (dist == "PGW") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        # Hazard calculations
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chpgw)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "EW") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chew)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "GenGamma") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chggama)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "LogNormal") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- par[1]
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chlnorm)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "LogLogistic") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- par[1]
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chllogis)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+
+      }
+    }
+    if (dist == "Gamma") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chgamma)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "Weibull") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE) +
+          x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chweibull)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+  }
+  #-------------------------------------------------------------------------------
+  # AFT
+  #-------------------------------------------------------------------------------
+  if (hstr == "AFT") {
+    if (dist == "PGW") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hpgw(times.obs * exp.x.beta.obs, ae0,
+                      be0, ce0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chpgw)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "EW") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hew(times.obs * exp.x.beta.obs, ae0,
+                     be0, ce0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chew)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "GenGamma") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        ce0 <- exp(par[3])
+        beta <- par[4:(3 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hggamma(times.obs * exp.x.beta.obs,
+                         ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chggamma)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "LogNormal") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- par[1]
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hlnorm(times.obs * exp.x.beta.obs, ae0,
+                        be0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chlnorm)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "LogLogistic") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- par[1]
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hllogis(times.obs * exp.x.beta.obs,
+                         ae0, be0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chllogis)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "Gamma") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hgamma(times.obs * exp.x.beta.obs, ae0,
+                        be0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chgamma)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+    if (dist == "Weibull") {
+      p <- ncol(des)
+      log.lik <- function(par) {
+        ae0 <- exp(par[1])
+        be0 <- exp(par[2])
+        beta <- par[3:(2 + p)]
+        x.beta <- des %*% beta
+        x.beta.obs <- x.beta[status]
+        exp.x.beta <- as.vector(exp(x.beta))
+        exp.x.beta.obs <- exp.x.beta[status]
+        lhaz0 <- hweibull(times.obs * exp.x.beta.obs,
+                          ae0, be0, log = TRUE) + x.beta.obs
+
+        # Cumulative hazard calculations
+        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chweibull)
+
+        # split by ID
+        lst <- split(df, df$ID)
+
+        # compute lagged differences within each ID
+        res_list <- lapply(lst, function(d) {
+          data.frame(
+            ID = d$ID[-1],                # drop the first (no diff)
+            time = d$time[-1],            # time of the difference
+            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          )
+        })
+
+
+        # sum diff_chaz for each ID
+        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+        # Negative log-likelihood
+        val <- -sum(lhaz0) + sum(chaz0)
+
+        return(val)
+      }
+    }
+  }
+  # Optimisation step
+  if (method != "nlminb") {
+    OPT <- optim(init, log.lik, control = list(maxit = maxit),
+                 method = method)
+  }
+  if (method == "nlminb") {
+    OPT <- nlminb(init, log.lik, control = list(iter.max = maxit))
+  }
+  OUT <- list(log_lik = log.lik, OPT = OPT)
+  return(OUT)
+}
+
 
 
 #----------------------------------------------------------------------------------------
