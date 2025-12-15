@@ -10,11 +10,14 @@
 #' @return the value of the PGW probability density function
 #' @export
 
-dpgw <- function(t, sigma, nu, gamma, log = FALSE){
-  val <- log(nu) - log(gamma) - nu*log(sigma) + (nu-1)*log(t) +
-    (1/gamma - 1)*log( 1 + (t/sigma)^nu ) +
-    ( 1 - ( 1 + (t/sigma)^nu )^(1/gamma) )
-  if(log) return(val) else return(exp(val))
+dpgw <- function(t, sigma, nu, gamma, log = FALSE) {
+  val <- log(nu) - log(gamma) - nu * log(sigma) + (nu - 1) * log(t) +
+    (1 / gamma - 1) * log(1 + (t / sigma) ^ nu) +
+    (1 - (1 + (t / sigma) ^ nu) ^ (1 / gamma))
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -28,9 +31,12 @@ dpgw <- function(t, sigma, nu, gamma, log = FALSE){
 #' @param log.p: log scale (TRUE or FALSE)
 #' @return the value of the PGW survival function
 #' @export
-spgw <- function(t, sigma, nu, gamma, log.p = FALSE){
-  val <- 1 - ( 1 + (t/sigma)^nu )^(1/gamma)
-  if(log.p) return(val) else return(exp(val))
+spgw <- function(t, sigma, nu, gamma, log.p = FALSE) {
+  val <- 1 - (1 + (t / sigma) ^ nu) ^ (1 / gamma)
+  if (log.p)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -44,10 +50,13 @@ spgw <- function(t, sigma, nu, gamma, log.p = FALSE){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the PGW hazard function
 #' @export
-hpgw <- function(t, sigma, nu, gamma, log = FALSE){
-  val <- log(nu) - log(gamma) - nu*log(sigma) + (nu-1)*log(t) +
-    (1/gamma - 1)*log( 1 + (t/sigma)^nu )
-  if(log) return(val) else return(exp(val))
+hpgw <- function(t, sigma, nu, gamma, log = FALSE) {
+  val <- log(nu) - log(gamma) - nu * log(sigma) + (nu - 1) * log(t) +
+    (1 / gamma - 1) * log(1 + (t / sigma) ^ nu)
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -60,8 +69,8 @@ hpgw <- function(t, sigma, nu, gamma, log = FALSE){
 #' @param t       : positive argument
 #' @return the value of the PGW cumulative hazard function
 #' @export
-chpgw <- function(t, sigma, nu, gamma){
-  val <- -1 + ( 1 + (t/sigma)^nu )^(1/gamma)
+chpgw <- function(t, sigma, nu, gamma) {
+  val <- -1 + (1 + (t / sigma) ^ nu) ^ (1 / gamma)
   return(val)
 }
 
@@ -75,9 +84,9 @@ chpgw <- function(t, sigma, nu, gamma){
 #' @param n       : 	number of observations
 #' @return generates random deviates
 #' @export
-rpgw <- function(n, sigma, nu, gamma){
+rpgw <- function(n, sigma, nu, gamma) {
   p <- runif(n)
-  out <- sigma*(  ( 1 - log(1-p) )^gamma - 1 )^(1/nu)
+  out <- sigma * ((1 - log(1 - p)) ^ gamma - 1) ^ (1 / nu)
   return(as.vector(out))
 }
 
@@ -91,8 +100,8 @@ rpgw <- function(n, sigma, nu, gamma){
 #' @param p       : 	probability. A value in (0,1)
 #' @return the value of the PGW quantile function
 #' @export
-qpgw <- function(p, sigma, nu, gamma){
-  out <- sigma*(  ( 1 - log(1-p) )^gamma - 1 )^(1/nu)
+qpgw <- function(p, sigma, nu, gamma) {
+  out <- sigma * ((1 - log(1 - p)) ^ gamma - 1) ^ (1 / nu)
   return(out)
 }
 
@@ -108,11 +117,23 @@ qpgw <- function(p, sigma, nu, gamma){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the EW hazard function
 #' @export
-hew <- function(t, sigma, nu, gamma, log=FALSE){
-  log.pdf <-  log(gamma) + (gamma-1)*pweibull(t,scale=sigma,shape=nu,log.p=TRUE) +
-    dweibull(t,scale=sigma,shape=nu,log=TRUE)
-  cdf <- exp(gamma*pweibull(t,scale=sigma,shape=nu,log.p=TRUE) )
-  log.h <- log.pdf - log(1-cdf)
+hew <- function(t, sigma, nu, gamma, log = FALSE) {
+  log.pdf <-
+    log(gamma) + (gamma - 1) * pweibull(t,
+                                        scale = sigma,
+                                        shape = nu,
+                                        log.p = TRUE) +
+    dweibull(t,
+             scale = sigma,
+             shape = nu,
+             log = TRUE)
+  cdf <- exp(gamma * pweibull(
+    t,
+    scale = sigma,
+    shape = nu,
+    log.p = TRUE
+  ))
+  log.h <- log.pdf - log(1 - cdf)
   ifelse(log, return(log.h), return(exp(log.h)))
 }
 
@@ -126,9 +147,14 @@ hew <- function(t, sigma, nu, gamma, log=FALSE){
 #' @param t       : positive argument
 #' @return the value of the EW cumulative hazard function
 #' @export
-chew <- function(t, sigma, nu, gamma){
-  cdf <- exp(gamma*pweibull(t,scale=sigma,shape=nu,log.p=TRUE) )
-  return(-log(1-cdf))
+chew <- function(t, sigma, nu, gamma) {
+  cdf <- exp(gamma * pweibull(
+    t,
+    scale = sigma,
+    shape = nu,
+    log.p = TRUE
+  ))
+  return(-log(1 - cdf))
 }
 
 #----------------------------------------------------------------------------------------
@@ -141,8 +167,8 @@ chew <- function(t, sigma, nu, gamma){
 #' @param gamma   : shape parameter
 #' @return the value of the EW quantile function
 #' @export
-qew <- function(p, sigma, nu, gamma){
-  quant <-  qweibull(p^(1/gamma),scale=sigma,shape=nu)
+qew <- function(p, sigma, nu, gamma) {
+  quant <-  qweibull(p ^ (1 / gamma), scale = sigma, shape = nu)
   return(quant)
 }
 
@@ -155,9 +181,19 @@ qew <- function(p, sigma, nu, gamma){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the Weibull hazard function
 #' @export
-hweibull <- function(t, sigma, nu, log=FALSE){
-  log.pdf <-  dweibull(t,scale=sigma,shape=nu, log = TRUE)
-  log.s <- pweibull(t,scale=sigma,shape=nu, lower.tail = FALSE, log.p = TRUE)
+hweibull <- function(t, sigma, nu, log = FALSE) {
+  log.pdf <-  dweibull(t,
+                       scale = sigma,
+                       shape = nu,
+                       log = TRUE)
+  log.s <-
+    pweibull(
+      t,
+      scale = sigma,
+      shape = nu,
+      lower.tail = FALSE,
+      log.p = TRUE
+    )
   log.h <- log.pdf - log.s
   ifelse(log, return(log.h), return(exp(log.h)))
 }
@@ -171,8 +207,15 @@ hweibull <- function(t, sigma, nu, log=FALSE){
 #' @param t       : positive argument
 #' @return the value of the Weibull cumulative hazard function
 #' @export
-chweibull <- function(t, sigma, nu){
-  H0 <- -pweibull(t,scale=sigma,shape=nu, lower.tail = FALSE, log.p = TRUE)
+chweibull <- function(t, sigma, nu) {
+  H0 <-
+    -pweibull(
+      t,
+      scale = sigma,
+      shape = nu,
+      lower.tail = FALSE,
+      log.p = TRUE
+    )
   return(H0)
 }
 
@@ -186,11 +229,14 @@ chweibull <- function(t, sigma, nu){
 #' @return the value of the LN hazard function
 #' @export
 
-hlnorm <- function(t, mu, sigma, log = FALSE){
+hlnorm <- function(t, mu, sigma, log = FALSE) {
   lpdf0 <-  dlnorm(t, mu, sigma, log = TRUE)
   ls0 <- plnorm(t, mu, sigma, lower.tail = FALSE, log.p = TRUE)
   val <- lpdf0 - ls0
-  if(log) return(val) else return(exp(val))
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -201,7 +247,7 @@ hlnorm <- function(t, mu, sigma, log = FALSE){
 #' @param t       : positive argument
 #' @return the value of the LN cumulative hazard function
 #' @export
-chlnorm <- function(t, mu, sigma){
+chlnorm <- function(t, mu, sigma) {
   H0 <- -plnorm(t, mu, sigma, lower.tail = FALSE, log.p = TRUE)
   return(H0)
 }
@@ -216,11 +262,14 @@ chlnorm <- function(t, mu, sigma){
 #' @return the value of the LL hazard function
 #' @export
 
-hllogis <- function(t, mu, sigma, log = FALSE){
-  lpdf0 <-  dlogis(log(t),mu,sigma, log = TRUE) - log(t)
-  ls0 <- plogis(log(t),mu,sigma, lower.tail = FALSE, log.p = TRUE)
+hllogis <- function(t, mu, sigma, log = FALSE) {
+  lpdf0 <-  dlogis(log(t), mu, sigma, log = TRUE) - log(t)
+  ls0 <- plogis(log(t), mu, sigma, lower.tail = FALSE, log.p = TRUE)
   val <- lpdf0 - ls0
-  if(log) return(val) else return(exp(val))
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -231,8 +280,8 @@ hllogis <- function(t, mu, sigma, log = FALSE){
 #' @param t       : positive argument
 #' @return the value of the LL cumulative hazard function
 #' @export
-chllogis <- function(t, mu, sigma){
-  H0 <- -plogis(log(t),mu,sigma, lower.tail = FALSE, log.p = TRUE)
+chllogis <- function(t, mu, sigma) {
+  H0 <- -plogis(log(t), mu, sigma, lower.tail = FALSE, log.p = TRUE)
   return(H0)
 }
 
@@ -244,7 +293,7 @@ chllogis <- function(t, mu, sigma){
 #' @param p       : 	probability. A value in (0,1)
 #' @return the value of the LL quantile function
 #' @export
-qllogis <- function(p, mu, sigma){
+qllogis <- function(p, mu, sigma) {
   qq <- exp(qlogis(p, mu, sigma))
   return(qq)
 }
@@ -258,11 +307,24 @@ qllogis <- function(p, mu, sigma){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the Gamma hazard function
 #' @export
-hgamma <- function(t, shape, scale, log = FALSE){
-  lpdf0 <-  dgamma(t, shape = shape, scale = scale, log = TRUE)
-  ls0 <- pgamma(t, shape = shape, scale = scale, lower.tail = FALSE, log.p = TRUE)
+hgamma <- function(t, shape, scale, log = FALSE) {
+  lpdf0 <-  dgamma(t,
+                   shape = shape,
+                   scale = scale,
+                   log = TRUE)
+  ls0 <-
+    pgamma(
+      t,
+      shape = shape,
+      scale = scale,
+      lower.tail = FALSE,
+      log.p = TRUE
+    )
   val <- lpdf0 - ls0
-  if(log) return(val) else return(exp(val))
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -274,8 +336,15 @@ hgamma <- function(t, shape, scale, log = FALSE){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the Weibull hazard function
 #' @export
-chgamma <- function(t, shape, scale){
-  H0 <- -pgamma(t, shape = shape, scale = scale, lower.tail = FALSE, log.p = TRUE)
+chgamma <- function(t, shape, scale) {
+  H0 <-
+    -pgamma(
+      t,
+      shape = shape,
+      scale = scale,
+      lower.tail = FALSE,
+      log.p = TRUE
+    )
   return(H0)
 }
 
@@ -291,10 +360,14 @@ chgamma <- function(t, shape, scale){
 #' @return the value of the GG probability density function
 #' @export
 
-dggamma <- function(t, sigma, nu, gamma, log = FALSE){
-  val <- log(gamma) - nu*log(sigma) - lgamma(nu/gamma) + (nu - 1)*log(t) -
-    (t/sigma)^gamma
-  if(log) return(val) else return(exp(val))
+dggamma <- function(t, sigma, nu, gamma, log = FALSE) {
+  val <-
+    log(gamma) - nu * log(sigma) - lgamma(nu / gamma) + (nu - 1) * log(t) -
+    (t / sigma) ^ gamma
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -308,9 +381,18 @@ dggamma <- function(t, sigma, nu, gamma, log = FALSE){
 #' @param log.p: log scale (TRUE or FALSE)
 #' @return the value of the GG cumulative distribution function
 #' @export
-pggamma <- function(t, sigma, nu, gamma, log.p = FALSE){
-  val <- pgamma( t^gamma, shape = nu/gamma, scale = sigma^gamma, log.p = TRUE)
-  if(log.p) return(val) else return(exp(val))
+pggamma <- function(t, sigma, nu, gamma, log.p = FALSE) {
+  val <-
+    pgamma(
+      t ^ gamma,
+      shape = nu / gamma,
+      scale = sigma ^ gamma,
+      log.p = TRUE
+    )
+  if (log.p)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -324,9 +406,19 @@ pggamma <- function(t, sigma, nu, gamma, log.p = FALSE){
 #' @param log.p: log scale (TRUE or FALSE)
 #' @return the value of the GG survival function
 #' @export
-sggamma <- function(t, sigma, nu, gamma, log.p = FALSE){
-  val <- pgamma( t^gamma, shape = nu/gamma, scale = sigma^gamma, log.p = TRUE, lower.tail =  FALSE)
-  if(log.p) return(val) else return(exp(val))
+sggamma <- function(t, sigma, nu, gamma, log.p = FALSE) {
+  val <-
+    pgamma(
+      t ^ gamma,
+      shape = nu / gamma,
+      scale = sigma ^ gamma,
+      log.p = TRUE,
+      lower.tail =  FALSE
+    )
+  if (log.p)
+    return(val)
+  else
+    return(exp(val))
 }
 
 
@@ -341,11 +433,14 @@ sggamma <- function(t, sigma, nu, gamma, log.p = FALSE){
 #' @param log: log scale (TRUE or FALSE)
 #' @return the value of the GG hazard function
 #' @export
-hggamma <- function(t, sigma, nu, gamma, log = FALSE){
+hggamma <- function(t, sigma, nu, gamma, log = FALSE) {
   log.pdf <- dggamma(t, sigma, nu, gamma, log = TRUE)
   log.s <- sggamma(t, sigma, nu, gamma, log.p = TRUE)
   val <- log.pdf - log.s
-  if(log) return(val) else return(exp(val))
+  if (log)
+    return(val)
+  else
+    return(exp(val))
 }
 
 #----------------------------------------------------------------------------------------
@@ -358,8 +453,15 @@ hggamma <- function(t, sigma, nu, gamma, log = FALSE){
 #' @param t       : positive argument
 #' @return the value of the GG cumulative hazard function
 #' @export
-chggamma <- function(t, sigma, nu, gamma){
-  val <- -pgamma( t^gamma, shape = nu/gamma, scale = sigma^gamma, log.p = TRUE, lower.tail =  FALSE)
+chggamma <- function(t, sigma, nu, gamma) {
+  val <-
+    -pgamma(
+      t ^ gamma,
+      shape = nu / gamma,
+      scale = sigma ^ gamma,
+      log.p = TRUE,
+      lower.tail =  FALSE
+    )
   return(val)
 }
 
@@ -373,8 +475,8 @@ chggamma <- function(t, sigma, nu, gamma){
 #' @param p       : 	probability. A value in (0,1)
 #' @return the value of the GG quantile function
 #' @export
-qggamma <- function(p, sigma, nu, gamma){
-  out <- qgamma(p, shape = nu/gamma, scale = sigma^gamma)^(1/gamma)
+qggamma <- function(p, sigma, nu, gamma) {
+  out <- qgamma(p, shape = nu / gamma, scale = sigma ^ gamma) ^ (1 / gamma)
   return(out)
 }
 
@@ -388,22 +490,27 @@ qggamma <- function(p, sigma, nu, gamma){
 #' @param n       : 	number of observations
 #' @return generates random deviates
 #' @export
-rggamma <- function(n, sigma, nu, gamma){
+rggamma <- function(n, sigma, nu, gamma) {
   p <- runif(n)
-  out <- qgamma(p, shape = nu/gamma, scale = sigma^gamma)^(1/gamma)
+  out <- qgamma(p, shape = nu / gamma, scale = sigma ^ gamma) ^ (1 / gamma)
   return(as.vector(out))
 }
 
 
 #----------------------------------------------------------------------------------------
-#' Compute the Cumulative Hazard for a Proportional Hazards Model (2-parameter baseline)
+#' Compute the Cumulative Hazard for a Proportional Hazards or Accelerated Failure Model
+#' (2- and 3-parameter baseline)
 #'
 #' Computes the cumulative hazard \eqn{H(t \mid x(t))} at multiple time points
-#' for each individual under a proportional hazards (PH) model with a
-#' two-parameter parametric baseline hazard.
+#' for each individual under a proportional hazards (PH) model or
+#' Accelerated Failure Time (AFT) model with a
+#' two-parameter or three-parameter parametric baseline hazard.
 #'
-#' The model assumes
-#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0)\exp(x(t)^\top \beta).}
+#' The PH model assumes
+#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
+#'
+#' In the AFT model, event time is rescaled as
+#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
 #'
 #' @param df A data frame containing:
 #'   \itemize{
@@ -412,9 +519,11 @@ rggamma <- function(n, sigma, nu, gamma){
 #'           representing \eqn{x(t)}.
 #'   }
 #' @param beta Numeric vector of regression coefficients.
-#' @param ae0,be0 Numeric baseline parameters of the cumulative hazard.
+#' @param npar Number of parameters in the baseline hazard (2 or 3).
+#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, ae0, be0)`.
+#'   `chfun(time, ae0, be0, ce0)`.
+#' @param hstr Hazard structure ("PH" or "AFT")
 #'
 #' @return A numeric vector with the cumulative hazard evaluated at each time
 #'   point in `df`.
@@ -422,134 +531,119 @@ rggamma <- function(n, sigma, nu, gamma){
 #' @export
 #----------------------------------------------------------------------------------------
 
-compute_CHPH2 <- function(df, beta, ae0, be0, chfun) {
+CH_TVC <-
+  function(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr) {
+    # Extract design matrix
+    Xmat <- as.matrix(df[, grep("^des", names(df))])
 
-  # Extract design matrix
-  Xmat <- as.matrix(df[, grep("^des", names(df))])
+    # exp(x beta)
+    exp_xb <- exp(Xmat %*% beta)
 
-  # exp(x beta)
-  exp_xb <- exp(Xmat %*% beta)
 
-  # baseline cumulative hazard at each time
-  ch0_t <- chfun(df$time, ae0, be0)
+    # PH models
+    if (hstr == "PH") {
+      # baseline cumulative hazard at each time
+      if (npar == 2)
+        ch0_t <- chfun(df$time, ae0, be0)
+      if (npar == 3)
+        ch0_t <- chfun(df$time, ae0, be0, ce0)
 
-  # final cumulative hazard contribution
-  CH_t <- as.vector(ch0_t * exp_xb)
+      # final cumulative hazard contribution
+      CH_t <- as.vector(ch0_t * exp_xb)
+    }
 
-  return(CH_t)
-}
+    # AFT models
+    if (hstr == "AFT") {
+      # baseline cumulative hazard at each time * exp(x^T beta)
+      if (npar == 2)
+        ch0_t <- chfun(df$time * exp_xb, ae0, be0)
+      if (npar == 3)
+        ch0_t <- chfun(df$time * exp_xb, ae0, be0, ce0)
 
+      # final cumulative hazard contribution
+      CH_t <- as.vector(ch0_t)
+    }
+
+    return(CH_t)
+  }
 
 #----------------------------------------------------------------------------------------
-#' Compute the Cumulative Hazard for a Proportional Hazards Model (3-parameter baseline)
+#' Compute the Survival Function for a Proportional Hazards or Accelerated Failure Model
+#' (2- and 3-parameter baseline)
 #'
-#' Same as \code{compute_CHPH2} but for baseline cumulative hazard functions
-#' depending on three parameters \eqn{(a_0, b_0, c_0)}.
+#' Computes the survival function \eqn{exp(-H(t \mid x(t)))} at the last time point
+#' for each individual under a proportional hazards (PH) model or
+#' Accelerated Failure Time (AFT) model with a
+#' two-parameter or three-parameter parametric baseline hazard.
 #'
-#' The PH structure is
+#' The PH model assumes
 #' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
 #'
+#' In the AFT model, event time is rescaled as
+#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
+#'
+#' @param df A data frame containing:
+#'   \itemize{
+#'     \item `time`: numeric vector of time points.
+#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
+#'           representing \eqn{x(t)}.
+#'   }
 #' @param beta Numeric vector of regression coefficients.
+#' @param npar Number of parameters in the baseline hazard (2 or 3).
 #' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
 #'   `chfun(time, ae0, be0, ce0)`.
+#' @param hstr Hazard structure ("PH" or "AFT")
 #'
-#' @return Numeric vector of cumulative hazard values.
+#' @return A numeric vector with the survival function evaluated at the last time
+#'   point in `df`.
 #'
 #' @export
 #----------------------------------------------------------------------------------------
 
-compute_CHPH3 <- function(df, beta, ae0, be0, ce0, chfun) {
+SPred_TVC <-
+  function(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr) {
+    # Sample size
+    n <- max(df$ID)
 
-  # Extract design matrix
-  Xmat <- as.matrix(df[, grep("^des", names(df))])
+    # Calculating the cumulative hazard function at all time points
+    if (npar == 2) {
+      CH <- CH_TVC(
+        df    = df,
+        beta  = beta,
+        npar  = npar,
+        ae0   = ae0,
+        be0   = be0,
+        chfun = chfun,
+        hstr = hstr
+      )
+    }
 
-  # exp(x beta)
-  exp_xb <- exp(Xmat %*% beta)
-
-  # baseline cumulative hazard at each time
-  ch0_t <- chfun(df$time, ae0, be0, ce0)
-
-  # final cumulative hazard contribution
-  CH_t <- as.vector(ch0_t * exp_xb)
-
-  return(CH_t)
-}
-
-
-
-#-------------------------------------------------------------------------------------------------
-#' Compute the Cumulative Hazard for an Accelerated Failure Time Model (2-parameter baseline)
-#'
-#' Computes the cumulative hazard under an accelerated failure time (AFT) model
-#' with a two-parameter baseline cumulative hazard function.
-#'
-#' In the AFT model, event time is rescaled as
-#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0).}
-#'
-#' @param beta Numeric vector of regression coefficients.
-#' @param ae0,be0 Numeric baseline parameters of the cumulative hazard.
-#' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, ae0, be0)`.
-#'
-#' @return Numeric vector of cumulative hazard values.
-#'
-#' @export
-#-------------------------------------------------------------------------------------------------
-
-compute_CHAFT2 <- function(df, beta, ae0, be0, chfun) {
-
-  # Extract design matrix
-  Xmat <- as.matrix(df[, grep("^des", names(df))])
-
-  # exp(x beta)
-  exp_xb <- exp(Xmat %*% beta)
-
-  # baseline cumulative hazard at each time * exp(x^T beta)
-  ch0_t <- chfun(df$time*exp_xb, ae0, be0)
-
-  # final cumulative hazard contribution
-  CH_t <- as.vector(ch0_t)
-
-  return(CH_t)
-}
+    if (npar == 3) {
+      CH <- CH_TVC(
+        df    = df,
+        beta  = beta,
+        npar  = npar,
+        ae0   = ae0,
+        be0   = be0,
+        ce0   = ce0,
+        chfun = chfun,
+        hstr = hstr
+      )
+    }
 
 
-#-------------------------------------------------------------------------------------------------
-#' Compute the Cumulative Hazard for an Accelerated Failure Time Model (3-parameter baseline)
-#'
-#' Computes the cumulative hazard under an AFT model with a three-parameter
-#' parametric baseline hazard.
-#'
-#' The cumulative hazard is
-#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
-#'
-#' @param beta Numeric vector of regression coefficients.
-#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
-#' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, ae0, be0, ce0)`.
-#'
-#' @return A numeric vector of cumulative hazard values.
-#'
-#' @export
-#-------------------------------------------------------------------------------------------------
+    # Creating matrix of cumulative hazard values
+    CH_mat <- matrix(CH, nrow = n, byrow = FALSE)
 
-compute_CHAFT3 <- function(df, beta, ae0, be0, ce0, chfun) {
+    # Output: individual survival functions at last time point
+    OUT <- as.vector(exp(-rowSums(t(
+      apply(CH_mat, 1, diff)
+    ))))
 
-  # Extract design matrix
-  Xmat <- as.matrix(df[, grep("^des", names(df))])
+    return(OUT)
+  }
 
-  # exp(x beta)
-  exp_xb <- exp(Xmat %*% beta)
-
-  # baseline cumulative hazard at each time * exp(x^T beta)
-  ch0_t <- chfun(df$time*exp_xb, ae0, be0, ce0)
-
-  # final cumulative hazard contribution
-  CH_t <- as.vector(ch0_t)
-
-  return(CH_t)
-}
 
 #----------------------------------------------------------------------------------------
 #' GHMLE function: Hazard Regression Models with a parametric baseline hazard
@@ -594,13 +688,13 @@ GHMLE <-
     times <- as.vector(times)
     status <- as.vector(as.logical(status))
     times.obs <- times[status]
-    if (!is.null(des)){
+    if (!is.null(des)) {
       des <- as.matrix(des)
-      des.obs <- des[status, ]
+      des.obs <- des[status,]
     }
-    if (!is.null(des_t)){
+    if (!is.null(des_t)) {
       des_t <- as.matrix(des_t)
-      des_t.obs <- des_t[status, ]
+      des_t.obs <- des_t[status,]
     }
 
     #------------------------------------------------------------------------------------
@@ -709,7 +803,6 @@ GHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "PH") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des)
@@ -723,7 +816,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hpgw(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times, ae0, be0, ce0) * exp.x.beta)
@@ -743,7 +837,8 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hew(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chew(times, ae0, be0, ce0) * exp.x.beta)
@@ -763,7 +858,8 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hggamma(times.obs, ae0, be0, ce0, log = TRUE)  + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chggamma(times, ae0, be0, ce0) * exp.x.beta)
@@ -782,9 +878,11 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hlnorm(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
 
-          val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
+          val <-
+            -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
           return(val)
         }
       }
@@ -800,9 +898,11 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hllogis(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
 
-          val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
+          val <-
+            -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
           return(val)
         }
       }
@@ -818,7 +918,8 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hgamma(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chgamma(times, ae0, be0) * exp.x.beta)
@@ -837,7 +938,8 @@ GHMLE <-
           x.beta <- des %*% beta
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
-          lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
+          lhaz0 <-
+            hweibull(times.obs, ae0, be0, log = TRUE)  + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chweibull(times, ae0, be0) * exp.x.beta)
@@ -851,7 +953,6 @@ GHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "AFT") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des)
@@ -865,7 +966,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.beta, ae0, be0, ce0))
@@ -886,7 +988,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.beta, ae0, be0, ce0))
@@ -907,7 +1010,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.beta, ae0, be0, ce0))
@@ -927,7 +1031,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chlnorm(times * exp.x.beta, ae0, be0))
@@ -947,7 +1052,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.beta, ae0, be0))
@@ -967,7 +1073,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.beta, ae0, be0))
@@ -987,7 +1094,8 @@ GHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
-          lhaz0 <- hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.beta, ae0, be0))
@@ -1003,7 +1111,6 @@ GHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "AH") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des_t)
@@ -1015,7 +1122,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
+          lhaz0 <-
+            hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1034,7 +1142,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
+          lhaz0 <-
+            hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1053,7 +1162,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
+          lhaz0 <-
+            hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -1071,7 +1181,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+          lhaz0 <-
+            hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1089,7 +1200,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+          lhaz0 <-
+            hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1107,7 +1219,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+          lhaz0 <-
+            hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1125,7 +1238,8 @@ GHMLE <-
 
           exp.x.alpha <- as.vector(exp(des_t %*% alpha))
           exp.x.alpha.obs <- exp.x.alpha[status]
-          lhaz0 <- hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
+          lhaz0 <-
+            hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -1140,7 +1254,6 @@ GHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "GH") {
-
       # PGW
       if (dist == "PGW") {
         p0 <- dim(des_t)[2]
@@ -1162,7 +1275,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -1191,7 +1305,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -1220,7 +1335,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -1248,7 +1364,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -1276,7 +1393,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -1304,7 +1422,8 @@ GHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          lhaz0 <- hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
+          lhaz0 <-
+            hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) + x.beta.obs
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -1466,577 +1585,745 @@ GHMLE <-
 #' @export
 #----------------------------------------------------------------------------------------
 
-HMLE_TVC <- function (init, df, status, hstr = NULL, dist = NULL, des = NULL,
-                      method = "Nelder-Mead", maxit = 100)
-{
+HMLE_TVC <-
+  function (init,
+            df,
+            status,
+            hstr = NULL,
+            dist = NULL,
+            des = NULL,
+            method = "Nelder-Mead",
+            maxit = 100)
+  {
+    df <- df[order(df$ID, df$time),]  # ensure sorted
 
-  df <- df[order(df$ID, df$time), ]  # ensure sorted
+    times <- as.vector(with(df, tapply(time, ID, max)))
 
-  times <- as.vector(with(df, tapply(time, ID, max)))
-
-  last_rows <- df[ave(df$time, df$ID, FUN = max) == df$time, ]
-  des <- as.matrix(last_rows[, grep("^des", names(df))])
+    last_rows <- df[ave(df$time, df$ID, FUN = max) == df$time,]
+    des <- as.matrix(last_rows[, grep("^des", names(df))])
 
 
-  status <- as.vector(as.logical(status))
-  times.obs <- times[status]
-  des_obs <- des[status, ]
+    status <- as.vector(as.logical(status))
+    times.obs <- times[status]
+    des_obs <- des[status,]
 
 
-  #-------------------------------------------------------------------------------
-  # PH
-  #-------------------------------------------------------------------------------
-  if (hstr == "PH") {
-    if (dist == "PGW") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        # Hazard calculations
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE) +
-          x.beta.obs
+    #-------------------------------------------------------------------------------
+    # PH
+    #-------------------------------------------------------------------------------
+    if (hstr == "PH") {
+      if (dist == "PGW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          # Hazard calculations
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hpgw(times.obs, ae0, be0, ce0, log = TRUE) +
+            x.beta.obs
 
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chpgw)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chpgw,
+            hstr = "PH"
           )
-        })
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
 
 
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
 
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
 
-        return(val)
+          return(val)
+        }
+      }
+      if (dist == "EW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chew,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "GenGamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chggama,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "LogNormal") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chlnorm,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "LogLogistic") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chllogis,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+
+        }
+      }
+      if (dist == "Gamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chgamma,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "Weibull") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE) +
+            x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chweibull,
+            hstr = "PH"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
       }
     }
-    if (dist == "EW") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hew(times.obs, ae0, be0, ce0, log = TRUE) +
-          x.beta.obs
+    #-------------------------------------------------------------------------------
+    # AFT
+    #-------------------------------------------------------------------------------
+    if (hstr == "AFT") {
+      if (dist == "PGW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hpgw(times.obs * exp.x.beta.obs, ae0,
+                        be0, ce0, log = TRUE) + x.beta.obs
 
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chew)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chpgw,
+            hstr = "AFT"
           )
-        })
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
 
 
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
 
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
 
-        return(val)
+          return(val)
+        }
+      }
+      if (dist == "EW") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hew(times.obs * exp.x.beta.obs, ae0,
+                       be0, ce0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chew,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "GenGamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          ce0 <- exp(par[3])
+          beta <- par[4:(3 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hggamma(times.obs * exp.x.beta.obs,
+                           ae0, be0, ce0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 3,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            ce0 = ce0,
+            chfun = chggamma,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "LogNormal") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hlnorm(times.obs * exp.x.beta.obs, ae0,
+                          be0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chlnorm,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "LogLogistic") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- par[1]
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hllogis(times.obs * exp.x.beta.obs,
+                           ae0, be0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chllogis,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "Gamma") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hgamma(times.obs * exp.x.beta.obs, ae0,
+                          be0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chgamma,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
+      }
+      if (dist == "Weibull") {
+        p <- ncol(des)
+        log.lik <- function(par) {
+          ae0 <- exp(par[1])
+          be0 <- exp(par[2])
+          beta <- par[3:(2 + p)]
+          x.beta <- des %*% beta
+          x.beta.obs <- x.beta[status]
+          exp.x.beta <- as.vector(exp(x.beta))
+          exp.x.beta.obs <- exp.x.beta[status]
+          lhaz0 <- hweibull(times.obs * exp.x.beta.obs,
+                            ae0, be0, log = TRUE) + x.beta.obs
+
+          # Cumulative hazard calculations
+          df$CH_t <- CH_TVC(
+            df = df,
+            npar = 2,
+            beta = beta,
+            ae0 = ae0,
+            be0 = be0,
+            chfun = chweibull,
+            hstr = "AFT"
+          )
+
+          # split by ID
+          lst <- split(df, df$ID)
+
+          # compute lagged differences within each ID
+          res_list <- lapply(lst, function(d) {
+            data.frame(
+              ID = d$ID[-1],
+              # drop the first (no diff)
+              time = d$time[-1],
+              # time of the difference
+              diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
+            )
+          })
+
+
+          # sum diff_chaz for each ID
+          chaz0 <-
+            as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
+
+          # Negative log-likelihood
+          val <- -sum(lhaz0) + sum(chaz0)
+
+          return(val)
+        }
       }
     }
-    if (dist == "GenGamma") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hggamma(times.obs, ae0, be0, ce0, log = TRUE) +
-          x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH3(df, beta, ae0, be0, ce0, chggama)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
+    # Optimisation step
+    if (method != "nlminb") {
+      OPT <- optim(init,
+                   log.lik,
+                   control = list(maxit = maxit),
+                   method = method)
     }
-    if (dist == "LogNormal") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- par[1]
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hlnorm(times.obs, ae0, be0, log = TRUE) +
-          x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chlnorm)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
+    if (method == "nlminb") {
+      OPT <- nlminb(init, log.lik, control = list(iter.max = maxit))
     }
-    if (dist == "LogLogistic") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- par[1]
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hllogis(times.obs, ae0, be0, log = TRUE) +
-          x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chllogis)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-
-      }
-    }
-    if (dist == "Gamma") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hgamma(times.obs, ae0, be0, log = TRUE) +
-          x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chgamma)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "Weibull") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        lhaz0 <- hweibull(times.obs, ae0, be0, log = TRUE) +
-          x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHPH2(df, beta, ae0, be0, chweibull)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
+    OUT <- list(log_lik = log.lik, OPT = OPT)
+    return(OUT)
   }
-  #-------------------------------------------------------------------------------
-  # AFT
-  #-------------------------------------------------------------------------------
-  if (hstr == "AFT") {
-    if (dist == "PGW") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hpgw(times.obs * exp.x.beta.obs, ae0,
-                      be0, ce0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chpgw)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "EW") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hew(times.obs * exp.x.beta.obs, ae0,
-                     be0, ce0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chew)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "GenGamma") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        ce0 <- exp(par[3])
-        beta <- par[4:(3 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hggamma(times.obs * exp.x.beta.obs,
-                         ae0, be0, ce0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT3(df, beta, ae0, be0, ce0, chggamma)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "LogNormal") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- par[1]
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hlnorm(times.obs * exp.x.beta.obs, ae0,
-                        be0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chlnorm)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "LogLogistic") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- par[1]
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hllogis(times.obs * exp.x.beta.obs,
-                         ae0, be0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chllogis)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "Gamma") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hgamma(times.obs * exp.x.beta.obs, ae0,
-                        be0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chgamma)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-    if (dist == "Weibull") {
-      p <- ncol(des)
-      log.lik <- function(par) {
-        ae0 <- exp(par[1])
-        be0 <- exp(par[2])
-        beta <- par[3:(2 + p)]
-        x.beta <- des %*% beta
-        x.beta.obs <- x.beta[status]
-        exp.x.beta <- as.vector(exp(x.beta))
-        exp.x.beta.obs <- exp.x.beta[status]
-        lhaz0 <- hweibull(times.obs * exp.x.beta.obs,
-                          ae0, be0, log = TRUE) + x.beta.obs
-
-        # Cumulative hazard calculations
-        df$CH_t <- compute_CHAFT2(df, beta, ae0, be0, chweibull)
-
-        # split by ID
-        lst <- split(df, df$ID)
-
-        # compute lagged differences within each ID
-        res_list <- lapply(lst, function(d) {
-          data.frame(
-            ID = d$ID[-1],                # drop the first (no diff)
-            time = d$time[-1],            # time of the difference
-            diff_chaz = diff(d$CH_t)    # value[t] - value[t-1]
-          )
-        })
-
-
-        # sum diff_chaz for each ID
-        chaz0 <- as.vector(tapply(df$CH_t, df$ID, sum, na.rm = TRUE))
-
-        # Negative log-likelihood
-        val <- -sum(lhaz0) + sum(chaz0)
-
-        return(val)
-      }
-    }
-  }
-  # Optimisation step
-  if (method != "nlminb") {
-    OPT <- optim(init, log.lik, control = list(maxit = maxit),
-                 method = method)
-  }
-  if (method == "nlminb") {
-    OPT <- nlminb(init, log.lik, control = list(iter.max = maxit))
-  }
-  OUT <- list(log_lik = log.lik, OPT = OPT)
-  return(OUT)
-}
 
 
 
@@ -2051,24 +2338,27 @@ HMLE_TVC <- function (init, df, status, hstr = NULL, dist = NULL, des = NULL,
 #' @return a list containing the upper and lower conf.int limits, the transformed MLE, and std errors
 #' @export
 
-Conf_Int <- function(FUN,MLE,level=0.95,index=NULL){
-  sd.int <- abs(qnorm(0.5*(1-level)))
-  tempf <- function(par){
+Conf_Int <- function(FUN,
+                     MLE,
+                     level = 0.95,
+                     index = NULL) {
+  sd.int <- abs(qnorm(0.5 * (1 - level)))
+  tempf <- function(par) {
     par[index] = exp(par[index])
-    return(FUN( par ))
+    return(FUN(par))
   }
   r.MLE <- MLE
   r.MLE[index] <- log(MLE[index])
-  HESS <- hessian(tempf,x=r.MLE)
+  HESS <- hessian(tempf, x = r.MLE)
   Fisher.Info <- solve(HESS)
   Sigma <- sqrt(diag(Fisher.Info))
-  U<- r.MLE + sd.int*Sigma
-  L<- r.MLE - sd.int*Sigma
-  C.I <- cbind(L,U,r.MLE, Sigma)
+  U <- r.MLE + sd.int * Sigma
+  L <- r.MLE - sd.int * Sigma
+  C.I <- cbind(L, U, r.MLE, Sigma)
   names.row <- paste0("par", seq_along(1:length(MLE)))
   names.row[index] <- paste0("log.par", seq_along(index))
-  rownames(C.I)<- names.row
-  colnames(C.I)<- c("Lower","Upper","Transf MLE", "Std. Error")
+  rownames(C.I) <- names.row
+  colnames(C.I) <- c("Lower", "Upper", "Transf MLE", "Std. Error")
   return(C.I)
 }
 
@@ -2092,72 +2382,98 @@ Conf_Int <- function(FUN,MLE,level=0.95,index=NULL){
 #' @return a vector containing the simulated times to event
 #' @export
 #----------------------------------------------------------------------------------------
-simGH <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta,
-                  beta_h = NULL, beta_t = NULL, beta = NULL, hstr, baseline){
+simGH <-
+  function(seed,
+           n,
+           des = NULL,
+           des_h = NULL,
+           des_t = NULL,
+           theta,
+           beta_h = NULL,
+           beta_t = NULL,
+           beta = NULL,
+           hstr,
+           baseline) {
+    if (!is.null(des))
+      des <- as.matrix(des)
+    if (!is.null(des_h))
+      des_h <- as.matrix(des_h)
+    if (!is.null(des_t))
+      des_t <- as.matrix(des_t)
 
-  if(!is.null(des))   des <- as.matrix(des)
-  if(!is.null(des_h)) des_h <- as.matrix(des_h)
-  if(!is.null(des_t)) des_t <- as.matrix(des_t)
+    # Baseline hazard
+    if (baseline == "LogNormal")
+      quantf <- function(p)
+        qlnorm(p, theta[1], theta[2])
+    if (baseline == "LogLogistic")
+      quantf <- function(p)
+        qllogis(p, theta[1], theta[2])
+    if (baseline == "Gamma")
+      quantf <- function(p)
+        qgamma(p, theta[1], theta[2])
+    if (baseline == "Weibull")
+      quantf <- function(p)
+        qweibull(p, theta[1], theta[2])
+    if (baseline == "PGW")
+      quantf <- function(p)
+        qpgw(p, theta[1], theta[2], theta[3])
+    if (baseline == "EW")
+      quantf <- function(p)
+        qew(p, theta[1], theta[2], theta[3])
+    if (baseline == "GenGamma")
+      quantf <- function(p)
+        qggamma(p, theta[1], theta[2], theta[3])
 
-  # Baseline hazard
-  if(baseline == "LogNormal")      quantf <- function(p) qlnorm(p, theta[1], theta[2])
-  if(baseline == "LogLogistic")      quantf <- function(p) qllogis(p, theta[1], theta[2])
-  if(baseline == "Gamma")       quantf <- function(p) qgamma(p, theta[1], theta[2])
-  if(baseline == "Weibull")       quantf <- function(p) qweibull(p, theta[1], theta[2])
-  if(baseline == "PGW")     quantf <- function(p) qpgw(p, theta[1], theta[2], theta[3])
-  if(baseline == "EW")      quantf <- function(p) qew(p, theta[1], theta[2], theta[3])
-  if(baseline == "GenGamma")      quantf <- function(p) qggamma(p, theta[1], theta[2], theta[3])
+    # Uniform variates used in the simulation
+    set.seed(seed)
+    u = runif(n)
 
-  # Uniform variates used in the simulation
-  set.seed(seed)
-  u = runif(n)
+    # GH simulation
+    if (hstr == "GH") {
+      # Linear predictors
+      exp.xbeta_t  <- exp(des_t %*% beta_t)
+      exp.dif <- exp(des_t %*% beta_t - des_h %*% beta_h)
 
-  # GH simulation
-  if( hstr == "GH" ){
-    # Linear predictors
-    exp.xbeta_t  <- exp(des_t%*%beta_t)
-    exp.dif <- exp(des_t%*%beta_t - des_h%*%beta_h )
+      # Simulating the times to event
+      p0 <- as.vector(1 - exp(log(1 - u) * exp.dif))
+      times <- as.vector(quantf(p0) / exp.xbeta_t)
+    }
 
-    # Simulating the times to event
-    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
-    times <- as.vector(quantf(p0)/exp.xbeta_t)
+    # PH simulation
+    if (hstr == "PH") {
+      # Linear predictors
+      exp.xbeta_t  <- 1
+      exp.dif <- exp(-des %*% beta)
+
+      # Simulating the times to event
+      p0 <- as.vector(1 - exp(log(1 - u) * exp.dif))
+      times <- as.vector(quantf(p0) / exp.xbeta_t)
+    }
+
+    # AFT simulation
+    if (hstr == "AFT") {
+      # Linear predictors
+      exp.xbeta_t  <- exp(des %*% beta)
+      exp.dif <- 1
+
+      # Simulating the times to event
+      p0 <- as.vector(1 - exp(log(1 - u) * exp.dif))
+      times <- as.vector(quantf(p0) / exp.xbeta_t)
+    }
+
+    # AH simulation
+    if (hstr == "AH") {
+      # Linear predictors
+      exp.xbeta_t  <- exp(des %*% beta)
+      exp.dif <- exp(des %*% beta)
+
+      # Simulating the times to event
+      p0 <- as.vector(1 - exp(log(1 - u) * exp.dif))
+      times <- as.vector(quantf(p0) / exp.xbeta_t)
+    }
+
+    return(as.vector(times))
   }
-
-  # PH simulation
-  if( hstr == "PH" ){
-    # Linear predictors
-    exp.xbeta_t  <- 1
-    exp.dif <- exp( - des%*%beta )
-
-    # Simulating the times to event
-    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
-    times <- as.vector(quantf(p0)/exp.xbeta_t)
-  }
-
-  # AFT simulation
-  if( hstr == "AFT" ){
-    # Linear predictors
-    exp.xbeta_t  <- exp(des%*%beta)
-    exp.dif <- 1
-
-    # Simulating the times to event
-    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
-    times <- as.vector(quantf(p0)/exp.xbeta_t)
-  }
-
-  # AH simulation
-  if( hstr == "AH" ){
-    # Linear predictors
-    exp.xbeta_t  <- exp(des%*%beta)
-    exp.dif <- exp(des%*%beta)
-
-    # Simulating the times to event
-    p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
-    times <- as.vector(quantf(p0)/exp.xbeta_t)
-  }
-
-  return(as.vector(times))
-}
 
 
 
@@ -2213,18 +2529,17 @@ GEHMLE <-
            des_t = NULL,
            method = "Nelder-Mead",
            maxit = 100) {
-
     # Required variables
     times <- as.vector(times)
     status <- as.vector(as.logical(status))
     times.obs <- times[status]
-    if (!is.null(des)){
+    if (!is.null(des)) {
       des <- as.matrix(des)
-      des.obs <- des[status, ]
+      des.obs <- des[status,]
     }
-    if (!is.null(des_t)){
+    if (!is.null(des_t)) {
       des_t <- as.matrix(des_t)
-      des_t.obs <- des_t[status, ]
+      des_t.obs <- des_t[status,]
     }
     hp <- as.vector(hp)
     hp.obs <- as.vector(hp[status])
@@ -2243,7 +2558,7 @@ GEHMLE <-
           ce0 <- exp(par[3])
 
           MAT = cbind(lhp.obs , hpgw(times.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chpgw(times, ae0, be0, ce0))
           return(val)
@@ -2257,8 +2572,9 @@ GEHMLE <-
           be0 <- exp(par[2])
           ce0 <- exp(par[3])
 
-          MAT <- cbind(lhp.obs , hew(times.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hew(times.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chew(times, ae0, be0, ce0))
           return(val)
@@ -2272,8 +2588,9 @@ GEHMLE <-
           be0 <- exp(par[2])
           ce0 <- exp(par[3])
 
-          MAT <- cbind(lhp.obs , hggamma(times.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hggamma(times.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chggamma(times, ae0, be0, ce0))
           return(val)
@@ -2286,8 +2603,9 @@ GEHMLE <-
           ae0 <- par[1]
           be0 <- exp(par[2])
 
-          MAT <- cbind(lhp.obs , hlnorm(times.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hlnorm(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0))
           return(val)
@@ -2300,8 +2618,9 @@ GEHMLE <-
           ae0 <- par[1]
           be0 <- exp(par[2])
 
-          MAT <- cbind(lhp.obs , hllogis(times.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hllogis(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0))
           return(val)
@@ -2314,8 +2633,9 @@ GEHMLE <-
           ae0 <- exp(par[1])
           be0 <- exp(par[2])
 
-          MAT <- cbind(lhp.obs , hgamma(times.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hgamma(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chgamma(times, ae0, be0))
           return(val)
@@ -2328,8 +2648,9 @@ GEHMLE <-
           ae0 <- exp(par[1])
           be0 <- exp(par[2])
 
-          MAT <- cbind(lhp.obs , hweibull(times.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs , hweibull(times.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) + sum(chweibull(times, ae0, be0))
           return(val)
@@ -2345,7 +2666,6 @@ GEHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "PH") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des)
@@ -2360,8 +2680,10 @@ GEHMLE <-
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
 
-          MAT <- cbind(lhp.obs , hpgw(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hpgw(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times, ae0, be0, ce0) * exp.x.beta)
@@ -2382,8 +2704,10 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hew(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hew(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times, ae0, be0, ce0) * exp.x.beta)
@@ -2404,8 +2728,10 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hggamma(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hggamma(times.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chggamma(times, ae0, be0, ce0) * exp.x.beta)
@@ -2425,10 +2751,13 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hlnorm(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hlnorm(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
-          val <- -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
+          val <-
+            -sum(lhaz0) + sum(chlnorm(times, ae0, be0) * exp.x.beta)
           return(val)
         }
       }
@@ -2445,10 +2774,13 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hllogis(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hllogis(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
-          val <- -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
+          val <-
+            -sum(lhaz0) + sum(chllogis(times, ae0, be0) * exp.x.beta)
           return(val)
         }
       }
@@ -2465,8 +2797,10 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hgamma(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hgamma(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times, ae0, be0) * exp.x.beta)
@@ -2486,8 +2820,10 @@ GEHMLE <-
           x.beta.obs <- x.beta[status]
           exp.x.beta <- as.vector(exp(x.beta))
 
-          MAT <- cbind(lhp.obs , hweibull(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <-
+            cbind(lhp.obs ,
+                  hweibull(times.obs, ae0, be0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times, ae0, be0) * exp.x.beta)
@@ -2502,7 +2838,6 @@ GEHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "AFT") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des)
@@ -2518,8 +2853,8 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hpgw(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.beta, ae0, be0, ce0))
@@ -2542,9 +2877,9 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
+                       hew(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.beta, ae0, be0, ce0))
@@ -2566,10 +2901,12 @@ GEHMLE <-
           exp.x.beta <- as.vector(exp(x.beta))
           exp.x.beta.obs <- exp.x.beta[status]
 
-          MAT <- cbind(lhp.obs ,
-                         hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
-                         x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <- cbind(
+            lhp.obs ,
+            hggamma(times.obs * exp.x.beta.obs, ae0, be0, ce0, log = TRUE) +
+              x.beta.obs
+          )
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.beta, ae0, be0, ce0))
@@ -2591,9 +2928,9 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                       hlnorm(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chlnorm(times * exp.x.beta, ae0, be0))
@@ -2615,9 +2952,9 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                       hllogis(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.beta, ae0, be0))
@@ -2639,9 +2976,9 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                       hgamma(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.beta, ae0, be0))
@@ -2663,9 +3000,9 @@ GEHMLE <-
           exp.x.beta.obs <- exp.x.beta[status]
 
           MAT <- cbind(lhp.obs ,
-                         hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
+                       hweibull(times.obs * exp.x.beta.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.beta, ae0, be0))
@@ -2680,7 +3017,6 @@ GEHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "AH") {
-
       # PGW
       if (dist == "PGW") {
         p <- ncol(des_t)
@@ -2694,8 +3030,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -2716,8 +3052,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -2738,8 +3074,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) / exp.x.alpha)
@@ -2759,8 +3095,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -2780,8 +3116,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -2801,8 +3137,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -2822,8 +3158,8 @@ GEHMLE <-
           exp.x.alpha.obs <- exp.x.alpha[status]
 
           MAT <- cbind(lhp.obs ,
-                         hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hweibull(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE))
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chweibull(times * exp.x.alpha, ae0, be0) / exp.x.alpha)
@@ -2838,7 +3174,6 @@ GEHMLE <-
     #------------------------------------------------------------------------------------
 
     if (hstr == "GH") {
-
       # PGW
       if (dist == "PGW") {
         p0 <- dim(des_t)[2]
@@ -2860,9 +3195,11 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          MAT <- cbind(lhp.obs ,
-                         hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <- cbind(
+            lhp.obs ,
+            hpgw(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs
+          )
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chpgw(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -2892,8 +3229,8 @@ GEHMLE <-
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
           MAT <- cbind(lhp.obs ,
-                         hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+                       hew(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) + x.beta.obs)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chew(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -2922,10 +3259,12 @@ GEHMLE <-
           exp.x.alpha.obs <- as.vector(exp.x.alpha[status])
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
-          MAT <- cbind(lhp.obs ,
-                         hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) +
-                         x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          MAT <- cbind(
+            lhp.obs ,
+            hggamma(times.obs * exp.x.alpha.obs, ae0, be0, ce0, log = TRUE) +
+              x.beta.obs
+          )
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <-  -sum(lhaz0) +
             sum(chggamma(times * exp.x.alpha, ae0, be0, ce0) * exp.x.beta.dif)
@@ -2954,9 +3293,9 @@ GEHMLE <-
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
           MAT <- cbind(lhp.obs ,
-                         hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                       hlnorm(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chlnorm(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -2985,9 +3324,9 @@ GEHMLE <-
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
           MAT <- cbind(lhp.obs ,
-                         hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                       hllogis(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chllogis(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -3016,9 +3355,9 @@ GEHMLE <-
           exp.x.beta.obs <- as.vector(exp.x.beta[status])
 
           MAT <- cbind(lhp.obs ,
-                         hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
+                       hgamma(times.obs * exp.x.alpha.obs, ae0, be0, log = TRUE) +
                          x.beta.obs)
-          lhaz0 <- apply(MAT,1,logSumExp)
+          lhaz0 <- apply(MAT, 1, logSumExp)
 
           val <- -sum(lhaz0) +
             sum(chgamma(times * exp.x.alpha, ae0, be0) * exp.x.beta.dif)
@@ -3048,4 +3387,3 @@ GEHMLE <-
     return(OUT)
 
   }
-

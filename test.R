@@ -32,17 +32,11 @@ ae0  <- 0
 be0  <- 1
 
 
-CH <- compute_CHPH2(
-  df    = df,
-  beta  = beta,
-  ae0   = ae0,
-  be0   = be0,
-  chfun = chlnorm
-)
 
-
-CH_mat <- matrix(CH, nrow = n, byrow = FALSE)
-
-H_tm <- rowSums(CH_mat)
-
-
+SPred_TVC(df = df,
+          beta = beta,
+          npar = npar,
+          ae0 = ae0,
+          be0 = be0,
+          chfun = chlnorm,
+          hstr = "PH")
