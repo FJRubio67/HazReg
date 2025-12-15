@@ -31,7 +31,7 @@ beta <- c(0.1, 0.2)
 ae0  <- 0
 be0  <- 1
 
-
+npar = 2
 
 SPred_TVC(df = df,
           beta = beta,
