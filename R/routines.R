@@ -507,10 +507,10 @@ rggamma <- function(n, sigma, nu, gamma) {
 #' two-parameter or three-parameter parametric baseline hazard.
 #'
 #' The PH model assumes
-#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
+#' \deqn{H(t \mid x(t)) = H_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
 #'
 #' In the AFT model, event time is rescaled as
-#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
+#' \deqn{H(t \mid x(t)) = H_0(t \exp(x(t)^\top\beta); a_0, b_0, c_0).}
 #'
 #' @param df A data frame containing:
 #'   \itemize{
@@ -577,10 +577,10 @@ CH_TVC <-
 #' two-parameter or three-parameter parametric baseline hazard.
 #'
 #' The PH model assumes
-#' \deqn{h(t \mid x(t)) = h_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
+#' \deqn{H(t \mid x(t)) = H_0(t; a_0, b_0, c_0)\exp(x(t)^\top \beta).}
 #'
 #' In the AFT model, event time is rescaled as
-#' \deqn{H(t \mid x) = H_0(t \exp(x^\top\beta); a_0, b_0, c_0).}
+#' \deqn{H(t \mid x(t)) = H_0(t \exp(x(t)^\top\beta); a_0, b_0, c_0).}
 #'
 #' @param df A data frame containing:
 #'   \itemize{
