@@ -1,3 +1,5 @@
+library(HazReg)
+
 set.seed(1234)
 des1 <- cbind(rnorm(10),rnorm(10))
 des2 <- cbind(rnorm(10),rnorm(10))
