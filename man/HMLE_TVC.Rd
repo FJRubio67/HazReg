@@ -10,46 +10,42 @@ HMLE_TVC(
   status,
   hstr = NULL,
   dist = NULL,
-  des = NULL,
   method = "Nelder-Mead",
   maxit = 100
 )
 }
 \arguments{
+\item{init}{: initial point for optimisation step
+under the parameterisation (log(scale), log(shape1), log(shape2), beta) for scale-shape1-shape2 models or
+(mu, log(scale), beta) for log-location scale models.}
+
 \item{df}{A data frame in **long format**, containing one row per individual per
 covariate-measurement time. Required columns:
 
 * `ID` — individual identifier
 * `time` — time at which the covariates are measured
-* `status` — event indicator (1 = event at the final time; 0 = censored)
 * `des*` — covariate columns used in the model (e.g., `des1`, `des2`, …)
 
 The last row for each ID represents the individual's event/censoring time,
 even if the event time does not coincide with a measurement time.}
 
+\item{status}{vector of event indicators (1 = event at the final time; 0 = censored)}
+
+\item{hstr}{Hazard structure ("PH" or "AFT")}
+
+\item{dist}{: distribution for the baseline hazard:
+Power Generalised Weibull ("PGW")
+Generalised Gamma ("GenGamma"))
+Exponentiated Weibull ("EW")
+Weibull ("Weibull")
+Gamma ("Gamma")
+LogNormal ("LogNormal")
+LogLogistic ("LogLogistic")}
+
 \item{method}{Optimisation method for the likelihood.
 Either `"nlminb"` or a valid `optim()` method.}
 
 \item{maxit}{Maximum number of optimisation iterations.}
-
-\item{beta}{Numeric vector of regression coefficients associated with the
-time-varying covariate design matrix (`des*` columns).}
-
-\item{ae0, }{be0, ce0
-Baseline hazard parameters.
-
-* For **2-parameter** baselines, only `ae0` and `be0` are used.
-* For **3-parameter** baselines, all three are used.
-
-These parameters are passed directly to the user-supplied baseline
-cumulative hazard function `chfun()`.}
-
-\item{chfun}{A function computing the **baseline cumulative hazard**:
-
-* 2-parameter case: `chfun(time, ae0, be0)`
-* 3-parameter case: `chfun(time, ae0, be0, ce0)`
-
-The function must return a vector of values of equal length to `time`.}
 }
 \value{
 A list containing:
@@ -69,6 +65,9 @@ The function supports:
 * **Proportional Hazards (PH)** models with time-varying covariates
 * Fully parametric baseline hazards (2-parameter or 3-parameter)
 
+* **Accelerated Failure Time (AFT)** models with time-varying covariates
+* Fully parametric baseline hazards (2-parameter or 3-parameter)
+
 The likelihood is constructed from the cumulative hazard differences across
 observation intervals for each individual, using a counting-process representation.
 
@@ -76,7 +75,7 @@ For each individual, the data must contain several rows:
 one per time-varying covariate measurement, along with the corresponding time.
 }
 \details{
-## Likelihood formulation
+## Likelihood formulation for PH models
 
 For each individual \(i\), let
 \(t_{i1} < t_{i2} < \cdots < t_{iK_i}\)
@@ -108,7 +107,7 @@ where:
 * \(\Delta H_{ij}\) comes from cumulative hazard increments
 * \(T_i = t_{iK}\) is the final event or censoring time
 * \(\delta_i\) is the event indicator
-* hazard and cumulative hazard are computed from `chfun()`
+* hazard and cumulative hazard are computed based on `dist`
 
 The function internally:
 1. Splits the data by ID
