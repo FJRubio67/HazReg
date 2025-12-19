@@ -1,22 +1,24 @@
-# df: ID, time, des
-
 sim_TVC <- function(seed, df, chfun, hstr, theta, beta, npar) {
 
-  # Calculating the cumulative hazard function at all time points
+  set.seed(seed)
+
+  n <- length(unique(df$ID))
+  sim    <- numeric(n)
+  status <- integer(n)
+
+  ## Survival at last observed time
   if (npar == 2) {
-    CH <- CH_TVC(
+    survs <- SPred_TVC(
       df    = df,
       beta  = beta,
       npar  = npar,
       ae0   = theta[1],
       be0   = theta[2],
       chfun = chfun,
-      hstr = hstr
+      hstr  = hstr
     )
-  }
-
-  if (npar == 3) {
-    CH <- CH_TVC(
+  } else {
+    survs <- SPred_TVC(
       df    = df,
       beta  = beta,
       npar  = npar,
@@ -24,54 +26,48 @@ sim_TVC <- function(seed, df, chfun, hstr, theta, beta, npar) {
       be0   = theta[2],
       ce0   = theta[3],
       chfun = chfun,
-      hstr = hstr
+      hstr  = hstr
     )
   }
 
-  sim <- rep(0,n)
-  status <- rep(0,n)
-
-  n <- length(unique(df$ID))
-
-  set.seed(seed)
-  u = runif(n)
-
-  if (npar == 2) {
- survs <- SPred_TVC(df = df,
-            beta = beta,
-            npar = npar,
-            ae0   = theta[1],
-            be0   = theta[2],
-            chfun = chfun,
-            hstr = hstr)
-  }
-
-  if (npar == 3) {
-   survs <- SPred_TVC(df = df,
-              beta = beta,
-              npar = npar,
-              ae0   = theta[1],
-              be0   = theta[2],
-              ce0   = theta[3],
-              chfun = chfun,
-              hstr = hstr)
-  }
-
-
+  ## Maximum follow-up times
   times <- as.vector(with(df, tapply(time, ID, max)))
 
+  ## Uniform draws
+  u <- runif(n)
 
-ind_sol <- (survs < u)
+  ## Censoring indicator
+  censored <- (survs > u)
 
-sim[!ind_sol] <- times[!ind_sol]
+  sim[censored]    <- times[censored]
+  status[censored] <- 0
 
-  for (i in c(1:n)[ind_sol]) {
+  ## Event times
+  for (i in which(!censored)) {
 
-    print(i)
+    rootfun <- function(t) {
+      SPred_TVC_i(
+        df    = df,
+        i     = i,
+        t     = t,
+        beta  = beta,
+        npar  = npar,
+        ae0   = theta[1],
+        be0   = theta[2],
+        ce0   = if (npar == 3) theta[3] else NULL,
+        chfun = chfun,
+        hstr  = hstr
+      ) - u[i]
+    }
 
+    ## Safety check for bracketing
+    if (rootfun(0) < 0 || rootfun(times[i]) > 0) {
+      stop("Root not bracketed for individual ", i)
+    }
+
+    sim[i] <- uniroot(rootfun, interval = c(0, times[i]))$root
+    status[i] <- 1
   }
 
-  out = list(sim = sim, status = status)
-
-  return(out)
+  list(time = sim, status = status)
 }

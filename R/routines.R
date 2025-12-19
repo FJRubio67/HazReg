@@ -520,9 +520,9 @@ rggamma <- function(n, sigma, nu, gamma) {
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param npar Number of parameters in the baseline hazard (2 or 3).
-#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param theta Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, ae0, be0, ce0)`.
+#'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
 #' @param hstr Hazard structure ("PH" or "AFT")
 #'
 #' @return A numeric vector with the cumulative hazard evaluated at each time
@@ -531,41 +531,69 @@ rggamma <- function(n, sigma, nu, gamma) {
 #' @export
 #----------------------------------------------------------------------------------------
 
-CH_TVC <-
-  function(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr) {
-    # Extract design matrix
-    Xmat <- as.matrix(df[, grep("^des", names(df))])
-
-    # exp(x beta)
-    exp_xb <- exp(Xmat %*% beta)
+CH_TVC <- function(df, beta, npar,
+                   theta,
+                   chfun, hstr) {
 
 
-    # PH models
-    if (hstr == "PH") {
-      # baseline cumulative hazard at each time
-      if (npar == 2)
-        ch0_t <- chfun(df$time, ae0, be0)
-      if (npar == 3)
-        ch0_t <- chfun(df$time, ae0, be0, ce0)
+  # Original order
+  df$original_order_idx <- seq_len(nrow(df))
 
-      # final cumulative hazard contribution
-      CH_t <- as.vector(ch0_t * exp_xb)
+  ## Ensure sorted data
+  df <- df[order(df$ID, df$time), ]
+
+  ## Extract design matrix
+  Xmat <- as.matrix(df[, grep("^des", names(df))])
+  exp_xb <- as.vector(exp(Xmat %*% beta))
+
+  ## Baseline cumulative hazard
+  H0 <- function(tt) {
+    if (npar == 2){
+       chfun(tt, theta[1], theta[2])
     }
-
-    # AFT models
-    if (hstr == "AFT") {
-      # baseline cumulative hazard at each time * exp(x^T beta)
-      if (npar == 2)
-        ch0_t <- chfun(df$time * exp_xb, ae0, be0)
-      if (npar == 3)
-        ch0_t <- chfun(df$time * exp_xb, ae0, be0, ce0)
-
-      # final cumulative hazard contribution
-      CH_t <- as.vector(ch0_t)
-    }
-
-    return(CH_t)
+    if (npar == 3){
+      chfun(tt,  theta[1], theta[2], theta[3])
   }
+
+  ## Split by individual
+  split_df <- split(seq_len(nrow(df)), df$ID)
+
+  ## Storage
+  H_out <- numeric(nrow(df))
+
+  for (idx in split_df) {
+
+    t <- df$time[idx]
+    xb <- exp_xb[idx]
+
+    if (hstr == "PH") {
+
+      H0_t <- H0(t)
+      dH0  <- diff(c(0, H0_t))
+      H_i  <- cumsum(dH0 * xb)
+
+    }
+
+    if (hstr == "AFT") {
+
+      H0_t <- H0(t * xb)
+      dH0  <- diff(c(0, H0_t))
+      H_i  <- cumsum(dH0)
+
+    }
+
+    H_out[idx] <- H_i
+  }
+
+  df$cum_hazard <- H_out
+
+  ## 4. Restore original order and remove the temporary index
+  df <- df[order(df$original_order_idx), ]
+  df$original_order_idx <- NULL
+
+  return(df)
+}
+
 
 #----------------------------------------------------------------------------------------
 #' Compute the Survival Function for a Proportional Hazards or Accelerated Failure Model
@@ -590,9 +618,9 @@ CH_TVC <-
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param npar Number of parameters in the baseline hazard (2 or 3).
-#' @param ae0,be0,ce0 Numeric baseline parameters of the cumulative hazard.
+#' @param theta Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, ae0, be0, ce0)`.
+#'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
 #' @param hstr Hazard structure ("PH" or "AFT")
 #'
 #' @return A numeric vector with the survival function evaluated at the last time
@@ -602,7 +630,7 @@ CH_TVC <-
 #----------------------------------------------------------------------------------------
 
 SPred_TVC <-
-  function(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr) {
+  function(df, beta, npar, theta, chfun, hstr) {
     # Sample size
     n <- max(df$ID)
 
@@ -612,11 +640,11 @@ SPred_TVC <-
         df    = df,
         beta  = beta,
         npar  = npar,
-        ae0   = ae0,
-        be0   = be0,
+        ae0   = theta[1],
+        be0   = theta[2],
         chfun = chfun,
         hstr = hstr
-      )
+      )$cum_hazard
     }
 
     if (npar == 3) {
@@ -624,26 +652,154 @@ SPred_TVC <-
         df    = df,
         beta  = beta,
         npar  = npar,
-        ae0   = ae0,
-        be0   = be0,
-        ce0   = ce0,
+        ae0   = theta[1],
+        be0   = theta[2],
+        ce0   = theta[3],
         chfun = chfun,
         hstr = hstr
-      )
+      )$cum_hazard
     }
 
 
-    # Creating matrix of cumulative hazard values
-    CH_mat <- matrix(CH, nrow = n, byrow = FALSE)
+    ## Extract last cumulative hazard per individual
+#    last_idx <- unique(ave(seq_along(CH), df$ID, FUN = max))
+#    H_last   <- CH[last_idx]
+    H_last <- tapply(CH, df$ID, function(x) x[length(x)])
 
-    # Output: individual survival functions at last time point
-    OUT <- as.vector(exp(-rowSums(t(
-      apply(CH_mat, 1, diff)
-    ))))
+    ## Survival at last time
+    S_last <- exp(-H_last)
 
-    return(OUT)
+    return(S_last)
   }
 
+
+#----------------------------------------------------------------------------------------
+#' Compute the Individual Survival Function at an Arbitrary Time Point
+#' for a Proportional Hazards or Accelerated Failure Model
+#' (2- and 3-parameter baseline)
+#'
+#' Computes the individual-specific survival function
+#' \eqn{S_i(t) = \exp\{-H_i(t \mid x_i(t))\}}
+#' at a user-specified time point \eqn{t} for a given individual \eqn{i},
+#' under a proportional hazards (PH) model or an accelerated failure time (AFT) model
+#' with time-varying covariates.
+#'
+#' The cumulative hazard for individual \eqn{i} is defined as:
+#'
+#' \deqn{
+#' H_i(t \mid x_i(t)) = \int_0^t h_0(u; a_0, b_0, c_0)
+#' \exp\{x_i(u)^\top \beta\} \, du
+#' }
+#'
+#' for the PH model, and
+#'
+#' \deqn{
+#' H_i(t \mid x_i(t)) = H_0\!\left(t \exp\{x_i(t)^\top \beta\};
+#' a_0, b_0, c_0 \right)
+#' }
+#'
+#' for the AFT model.
+#'
+#' Time-varying covariates are assumed to be piecewise constant between
+#' the observation times provided in `df`. If the evaluation time `t`
+#' does not coincide with an observed time point for individual `i`,
+#' the covariate values are taken to be those at the most recent time
+#' strictly less than `t`.
+#'
+#' @param df A data frame containing:
+#'   \itemize{
+#'     \item `ID`: individual identifier.
+#'     \item `time`: numeric vector of observation times.
+#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
+#'           representing the time-varying covariate process \eqn{x_i(t)}.
+#'   }
+#' @param i Integer specifying the individual for whom the survival
+#'   function is to be evaluated.
+#' @param t Numeric value giving the time point at which the survival
+#'   function is evaluated. Must lie within the observation window of
+#'   individual `i`.
+#' @param beta Numeric vector of regression coefficients.
+#' @param npar Number of parameters in the baseline hazard (2 or 3).
+#' @param theta Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
+#' @param hstr Character string specifying the hazard structure:
+#'   `"PH"` for proportional hazards or `"AFT"` for accelerated failure time.
+#'
+#' @return A numeric scalar giving the survival probability
+#'   \eqn{S_i(t)} for individual `i` at time `t`.
+#'
+#' @details
+#' This function relies on `CH_TVC()` to compute the cumulative hazard
+#' over the observed time grid augmented with the evaluation time `t`.
+#' The cumulative hazard is then extracted at time `t`, and the survival
+#' function is obtained as \eqn{\exp\{-H_i(t)\}}.
+#'
+#' The resulting survival function is continuous in time but may exhibit
+#' changes in slope at covariate change points, reflecting the
+#' piecewise-constant nature of the time-varying covariates.
+#'
+#' @seealso \code{\link{CH_TVC}}, \code{\link{SPred_TVC}}
+#'
+#' @export
+#----------------------------------------------------------------------------------------
+
+SPred_TVC_i <- function(
+    df, i, t,
+    beta, npar,
+    theta,
+    chfun,
+    hstr
+) {
+
+  ## 1. Subset individual data
+  dfi <- df[df$ID == i, ]
+  dfi <- dfi[order(dfi$time), ]
+
+  if (t < min(dfi$time) || t > max(dfi$time))
+    stop("t must lie within the individual's observation window")
+
+  ## 2. Add time t if needed (piecewise-constant covariates)
+  if (!any(abs(dfi$time - t) < .Machine$double.eps)) {
+    idx <- max(which(dfi$time < t))
+    newrow <- dfi[idx, ]
+    newrow$time <- t
+    dfi <- rbind(dfi, newrow)
+    dfi <- dfi[order(dfi$time), ]
+  }
+
+  ## 3. Compute cumulative hazard via existing engine
+  CH <- if (npar == 2) {
+    CH_TVC(
+      df    = dfi,
+      beta  = beta,
+      npar  = npar,
+      ae0   = theta[1],
+      be0   = theta[2],
+      chfun = chfun,
+      hstr  = hstr
+    )$cum_hazard
+  } else {
+    CH_TVC(
+      df    = dfi,
+      beta  = beta,
+      npar  = npar,
+      ae0   = theta[1],
+      be0   = theta[2],
+      ce0   = theta[3],
+      chfun = chfun,
+      hstr  = hstr
+    )$cum_hazard
+  }
+
+  ## 4.  Extract cumulative hazard at time t
+  H_i_t <- CH[which.min(abs(dfi$time - t))]
+
+  ## 5. Survival
+  S_i_t <- exp(-H_i_t)
+
+  return(S_i_t)
+}
 
 #----------------------------------------------------------------------------------------
 #' GHMLE function: Hazard Regression Models with a parametric baseline hazard
