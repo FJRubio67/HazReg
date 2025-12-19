@@ -6,7 +6,7 @@
 for a Proportional Hazards or Accelerated Failure Model
 (2- and 3-parameter baseline)}
 \usage{
-SPred_TVC_i(df, i, t, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr)
+SPred_TVC_i(df, i, t, beta, npar, theta, chfun, hstr)
 }
 \arguments{
 \item{df}{A data frame containing:
@@ -28,11 +28,10 @@ individual `i`.}
 
 \item{npar}{Number of parameters in the baseline hazard (2 or 3).}
 
-\item{ae0, be0, ce0}{Numeric baseline parameters of the cumulative hazard.
-Argument `ce0` is required only when `npar = 3`.}
+\item{theta}{Numeric baseline parameters of the cumulative hazard.}
 
 \item{chfun}{A function computing the baseline cumulative hazard:
-`chfun(time, ae0, be0)` or `chfun(time, ae0, be0, ce0)`.}
+`chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.}
 
 \item{hstr}{Character string specifying the hazard structure:
 `"PH"` for proportional hazards or `"AFT"` for accelerated failure time.}

@@ -5,7 +5,7 @@
 \title{Compute the Cumulative Hazard for a Proportional Hazards or Accelerated Failure Model
 (2- and 3-parameter baseline)}
 \usage{
-CH_TVC(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr)
+CH_TVC(df, beta, npar, theta, chfun, hstr)
 }
 \arguments{
 \item{df}{A data frame containing:
@@ -19,10 +19,10 @@ CH_TVC(df, beta, npar, ae0, be0, ce0 = NULL, chfun, hstr)
 
 \item{npar}{Number of parameters in the baseline hazard (2 or 3).}
 
-\item{ae0, be0, ce0}{Numeric baseline parameters of the cumulative hazard.}
+\item{theta}{Numeric baseline parameters of the cumulative hazard.}
 
 \item{chfun}{A function computing the baseline cumulative hazard:
-`chfun(time, ae0, be0, ce0)`.}
+`chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.}
 
 \item{hstr}{Hazard structure ("PH" or "AFT")}
 }

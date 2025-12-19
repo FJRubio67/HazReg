@@ -553,6 +553,7 @@ CH_TVC <- function(df, beta, npar,
     }
     if (npar == 3){
       chfun(tt,  theta[1], theta[2], theta[3])
+    }
   }
 
   ## Split by individual
@@ -1789,7 +1790,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chpgw,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -1839,7 +1840,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chew,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -1889,7 +1890,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chggama,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -1937,7 +1938,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chlnorm,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -1985,7 +1986,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chllogis,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2033,7 +2034,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chgamma,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2081,7 +2082,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chweibull,
             hstr = "PH"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2137,7 +2138,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chpgw,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2188,7 +2189,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chew,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2239,7 +2240,7 @@ HMLE_TVC <-
             ce0 = ce0,
             chfun = chggamma,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2288,7 +2289,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chlnorm,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2337,7 +2338,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chllogis,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2386,7 +2387,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chgamma,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
@@ -2435,7 +2436,7 @@ HMLE_TVC <-
             be0 = be0,
             chfun = chweibull,
             hstr = "AFT"
-          )
+          )$cum_hazard
 
           # split by ID
           lst <- split(df, df$ID)
