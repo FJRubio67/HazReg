@@ -32,13 +32,12 @@ df <- do.call(
 beta <- c(0.1, 0.2)
 ae0  <- 0
 be0  <- 1
+theta = c(ae0,be0)
 
 npar = 2
 
 SPred_TVC(df = df,
           beta = beta,
-          npar = npar,
-          ae0 = ae0,
-          be0 = be0,
+          theta = theta,
           chfun = chlnorm,
           hstr = "PH")

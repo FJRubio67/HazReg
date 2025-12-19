@@ -5,7 +5,7 @@
 \title{Compute the Cumulative Hazard for a Proportional Hazards or Accelerated Failure Model
 (2- and 3-parameter baseline)}
 \usage{
-CH_TVC(df, beta, npar, theta, chfun, hstr)
+CH_TVC(df, beta, theta, chfun, hstr)
 }
 \arguments{
 \item{df}{A data frame containing:
@@ -16,8 +16,6 @@ CH_TVC(df, beta, npar, theta, chfun, hstr)
 }}
 
 \item{beta}{Numeric vector of regression coefficients.}
-
-\item{npar}{Number of parameters in the baseline hazard (2 or 3).}
 
 \item{theta}{Numeric baseline parameters of the cumulative hazard.}
 
