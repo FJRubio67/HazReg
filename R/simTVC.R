@@ -29,9 +29,16 @@ ncps <- sum(ncp)
 # IDs
 id <- rep(seq_along(ncp), times = ncp)
 
+fup <- Xcf$fup.time
 
-# Contact points
-# ncp: vector of counts, length n
-# fup: vector of follow-up times, length n
+sim_times <- lapply(seq_len(n), function(i) {
+  ti <- if (ncp[i] > 0) {
+    sort(runif(ncp[i], min = 0, max = fup[i]))
+  } else {
+    numeric(0)
+  }
+  c(ti, fup[i])
+})
+
 
 
