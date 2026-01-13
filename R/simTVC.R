@@ -34,4 +34,4 @@ id <- rep(seq_along(ncp), times = ncp)
 # ncp: vector of counts, length n
 # fup: vector of follow-up times, length n
 
-id <- rep(seq_along(ncp), times = ncp)
+
