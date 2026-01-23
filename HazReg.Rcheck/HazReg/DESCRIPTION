@@ -1,0 +1,20 @@
+Package: HazReg
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Jane", "Doe",
+      email = "jane@example.com",
+      role = c("aut", "cre")
+    )
+  )
+Description: More about what it does (maybe more than one line).
+    Continuation lines should be indented.
+License: What license is it under?
+Encoding: UTF-8
+NeedsCompilation: no
+Packaged: 2026-01-23 15:47:08 UTC; javierrubio
+Author: Jane Doe [aut, cre]
+Maintainer: Jane Doe <jane@example.com>
+Built: R 4.4.0; ; 2026-01-23 15:47:09 UTC; unix

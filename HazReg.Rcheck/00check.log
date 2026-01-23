@@ -1,0 +1,104 @@
+* using log directory ‘/Users/javierrubio/Documents/GitHub/HazReg/HazReg.Rcheck’
+* using R version 4.4.0 (2024-04-24)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 14.0.0 (clang-1400.0.29.202)
+    GNU Fortran (GCC) 12.2.0
+* running under: macOS 26.2
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘HazReg/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘HazReg’ version ‘0.1.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking serialization versions ... OK
+* checking whether package ‘HazReg’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... NOTE
+unable to verify current time
+* checking DESCRIPTION meta-information ... WARNING
+Non-standard license specification:
+  What license is it under?
+Standardizable: FALSE
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+Conf_Int: no visible global function definition for ‘qnorm’
+Conf_Int: no visible global function definition for ‘hessian’
+GEHMLE : log.lik: no visible binding for global variable ‘logSumExp’
+GEHMLE: no visible global function definition for ‘optim’
+GEHMLE: no visible global function definition for ‘nlminb’
+GHMLE: no visible global function definition for ‘optim’
+GHMLE: no visible global function definition for ‘nlminb’
+chew: no visible global function definition for ‘pweibull’
+chgamma: no visible global function definition for ‘pgamma’
+chggamma: no visible global function definition for ‘pgamma’
+chllogis: no visible global function definition for ‘plogis’
+chlnorm: no visible global function definition for ‘plnorm’
+chweibull: no visible global function definition for ‘pweibull’
+hew: no visible global function definition for ‘pweibull’
+hew: no visible global function definition for ‘dweibull’
+hgamma: no visible global function definition for ‘dgamma’
+hgamma: no visible global function definition for ‘pgamma’
+hllogis: no visible global function definition for ‘dlogis’
+hllogis: no visible global function definition for ‘plogis’
+hlnorm: no visible global function definition for ‘dlnorm’
+hlnorm: no visible global function definition for ‘plnorm’
+hweibull: no visible global function definition for ‘dweibull’
+hweibull: no visible global function definition for ‘pweibull’
+pggamma: no visible global function definition for ‘pgamma’
+qew: no visible global function definition for ‘qweibull’
+qggamma: no visible global function definition for ‘qgamma’
+qllogis: no visible global function definition for ‘qlogis’
+rggamma: no visible global function definition for ‘runif’
+rggamma: no visible global function definition for ‘qgamma’
+rpgw: no visible global function definition for ‘runif’
+sggamma: no visible global function definition for ‘pgamma’
+simGH : quantf: no visible global function definition for ‘qlnorm’
+simGH : quantf: no visible global function definition for ‘qgamma’
+simGH : quantf: no visible global function definition for ‘qweibull’
+simGH: no visible global function definition for ‘runif’
+Undefined global functions or variables:
+  dgamma dlnorm dlogis dweibull hessian logSumExp nlminb optim pgamma
+  plnorm plogis pweibull qgamma qlnorm qlogis qnorm qweibull runif
+Consider adding
+  importFrom("stats", "dgamma", "dlnorm", "dlogis", "dweibull", "nlminb",
+             "optim", "pgamma", "plnorm", "plogis", "pweibull", "qgamma",
+             "qlnorm", "qlogis", "qnorm", "qweibull", "runif")
+to your NAMESPACE file.
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘Conf_Int’ ‘GEHMLE’ ‘GHMLE’ ‘chew’ ‘chgamma’ ‘chggamma’ ‘chllogis’
+  ‘chlnorm’ ‘chpgw’ ‘chweibull’ ‘dggamma’ ‘dpgw’ ‘hew’ ‘hgamma’
+  ‘hggamma’ ‘hllogis’ ‘hlnorm’ ‘hpgw’ ‘hweibull’ ‘pggamma’ ‘qew’
+  ‘qggamma’ ‘qllogis’ ‘qpgw’ ‘rggamma’ ‘rpgw’ ‘sggamma’ ‘simGH’ ‘spgw’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking examples ... NONE
+* checking for non-standard things in the check directory ... OK
+* checking for detritus in the temp directory ... OK
+* DONE
+Status: 2 WARNINGs, 2 NOTEs
