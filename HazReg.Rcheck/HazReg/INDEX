@@ -1,0 +1,57 @@
+Conf_Int                Function to calculate the normal confidence
+                        intervals. The parameters indicated with
+                        "index" are transformed to the real line using
+                        log().
+GEHMLE                  Relative (Net) Survival models Log likelihood
+                        and MLE for the GH excess hazards model.
+                        Baseline hazards: Lognormal, Log-logistic,
+                        Gamma, PGW, EW, GG
+GHMLE                   GHMLE function: Hazard Regression Models with a
+                        parametric baseline hazard
+chew                    Power Exponentiated Weibull (EW) cumulative
+                        hazard function. https://rpubs.com/FJRubio/EWD
+chgamma                 Gamma (G) cumulative hazard function.
+chggamma                Generalised Gamma (GG) cumulative hazard
+                        function. https://rpubs.com/FJRubio/GG
+chllogis                Log-logistic (LL) cumulative hazard function.
+chlnorm                 Lognormal (LN) cumulative hazard function.
+chpgw                   Power Generalised Weibull (PGW) cumulative
+                        hazard function. http://rpubs.com/FJRubio/PGW
+chweibull               Weibull (W) cumulative hazard function.
+dggamma                 Generalised Gamma (GG) probability density
+                        function. https://rpubs.com/FJRubio/GG
+dpgw                    Power Generalised Weibull (PGW) probability
+                        density function. http://rpubs.com/FJRubio/PGW
+hew                     Power Exponentiated Weibull (EW) hazard
+                        function. https://rpubs.com/FJRubio/EWD
+hgamma                  Gamma (G) hazard function.
+hggamma                 Generalised Gamma (GG) hazard function.
+                        https://rpubs.com/FJRubio/GG
+hllogis                 Log-logistic (LL) hazard function.
+hlnorm                  Lognormal (LN) hazard function.
+hpgw                    Power Generalised Weibull (PGW) hazard
+                        function. http://rpubs.com/FJRubio/PGW
+hweibull                Weibull (W) hazard function.
+pggamma                 Generalised Gamma (GG) cumulative distribution
+                        function. https://rpubs.com/FJRubio/GG
+qew                     Power Exponentiated Weibull (EW) quantile
+                        function. https://rpubs.com/FJRubio/EWD
+qggamma                 Generalised Gamma (GG) quantile function.
+                        https://rpubs.com/FJRubio/GG
+qllogis                 Log-logistic (LL) quantile function.
+qpgw                    Power Generalised Weibull (PGW) quantile
+                        function. http://rpubs.com/FJRubio/PGW
+rggamma                 Generalised Gamma (GG) random number
+                        generation. https://rpubs.com/FJRubio/GG
+rpgw                    Power Generalised Weibull (PGW) random number
+                        generation. http://rpubs.com/FJRubio/PGW
+sggamma                 Generalised Gamma (GG) survival function.
+                        https://rpubs.com/FJRubio/GG
+simGH                   simGH function: Function to simulate times to
+                        event from a model with a GH structure for
+                        different parametric baseline hazards.
+                        Distributions: LogNormal, LogLogistic,
+                        GenGamma, Gamma, Weibull, PGW, EW. See:
+                        https://github.com/FJRubio67/HazReg
+spgw                    Power Generalised Weibull (PGW) survival
+                        function. http://rpubs.com/FJRubio/PGW

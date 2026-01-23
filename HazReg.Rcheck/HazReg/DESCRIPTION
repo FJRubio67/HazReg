@@ -1,20 +1,14 @@
 Package: HazReg
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Parametric hazard-based regression models
 Version: 0.1.0
-Authors@R: c(
-    person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
-    )
-  )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Author: F. Javier Rubio
+Maintainer: F. Javier Rubio <fxrubio@gmail.com>
+Description: The HazReg R package implements the following parametric hazard-based regression models for survival data, in the overall and relative survival frameworks.
 License: What license is it under?
 Encoding: UTF-8
+RoxygenNote: 7.3.3
+Imports: numDeriv, matrixStats
 NeedsCompilation: no
-Packaged: 2026-01-23 15:47:08 UTC; javierrubio
-Author: Jane Doe [aut, cre]
-Maintainer: Jane Doe <jane@example.com>
-Built: R 4.4.0; ; 2026-01-23 15:47:09 UTC; unix
+Packaged: 2026-01-23 15:48:55 UTC; javierrubio
+Built: R 4.4.0; ; 2026-01-23 15:48:56 UTC; unix
