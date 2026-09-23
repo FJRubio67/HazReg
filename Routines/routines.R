@@ -1468,10 +1468,130 @@ simGH <-
 
     return(as.vector(times))
   }
+#----------------------------------------------------------------------------------------
+#' simGHC function: Function to simulate times to event from a model with a GH structure
+#' conditional on surviving within a specified time interval for different parametric 
+#' baseline hazards.
+#' Distributions: LogNormal, LogLogistic, GenGamma, Gamma, Weibull, PGW, EW.
+#' See: https://github.com/FJRubio67/HazReg
+#----------------------------------------------------------------------------------------
+#' @param seed  : seed for simulation
+#' @param n : sample size (number of individuals)
+#' @param theta  :  parameters of the baseline hazard
+#' @param beta_h  : regression parameters multiplying the hazard for GH model
+#' @param beta_t  : regression parameters multiplying the time scale for GH model
+#' @param beta  : regression parameters for AFT, PH, and AH models
+#' @param des_h : Design matrix for GH model (hazard scale)
+#' @param des_t : Design matrix for GH model (time scale)
+#' @param des : Design matrix for AFT, PH, and AH models
+#' @param hstr  : hazard structure (AH, AFT, PH, GH)
+#' @param baseline  : baseline hazard distribution
+#' @param upper  : Upper bound of time interval for conditional - a null input is read as Inf
+#' @param lower  :  Lower bound of time interval for conditional - a null input is read as 0 
+#' @return a vector containing the simulated times to event
+#' @export
+simGHC <- function(seed, n, des = NULL, des_h = NULL, des_t = NULL, theta,
+                   beta_h = NULL, beta_t = NULL, beta = NULL, hstr, baseline, 
+                   upper = NULL, lower = NULL){
+  
+  if(!is.null(des))   des <- as.matrix(des)
+  if(!is.null(des_h)) des_h <- as.matrix(des_h)
+  if(!is.null(des_t)) des_t <- as.matrix(des_t)
+  if(is.null(lower)) lower <- rep(0, n)
+  if(is.null(upper)) upper <- rep(Inf, n)
+  if(length(upper) == 1) upper <- rep(upper, n)
+  if(length(lower) == 1) lower <- rep(lower, n)
+  
+  # Baseline hazard
+  if(baseline == "LogNormal")      quantf <- function(p) qlnorm(p, theta[1], theta[2])
+  if(baseline == "LogLogistic")      quantf <- function(p) qllogis(p, theta[1], theta[2])
+  if(baseline == "Gamma")       quantf <- function(p) qgamma(p, theta[1], theta[2])
+  if(baseline == "Weibull")       quantf <- function(p) qweibull(p, theta[1], theta[2])
+  if(baseline == "PGW")     quantf <- function(p) qpgw(p, theta[1], theta[2], theta[3])
+  if(baseline == "EW")      quantf <- function(p) qew(p, theta[1], theta[2], theta[3])
+  if(baseline == "GenGamma")      quantf <- function(p) qggamma(p, theta[1], theta[2], theta[3])
+  
+  # Uniform variates used in the simulation
+  set.seed(seed) 
+  ##############################################################################
+  #Draw from truncated uniform - this is the time-to-event probability.
+  #Will simulate from S_1(t|tau_L < t < tau_U)
+  u <- (runif(n, 
+              min = ghs(des, des_h, des_t, 
+                        theta, beta_h, beta_t, beta, hstr, 
+                        baseline, upper) , 
+              max = ghs(des, des_h, des_t, 
+                        theta, beta_h, beta_t, beta, hstr, 
+                        baseline, lower) ) ) 
+  if(hstr == 'GH'){
+    exp.xbeta_t  <- exp(des_t%*%beta_t)
+    exp.dif <- exp(des_t%*%beta_t - des_h%*%beta_h) 
+  } 
+  else {
+    exp.xbeta_t  <- exp(des%*%beta) ^ {hstr == 'AFT'|| hstr == 'AH'}
+    exp.dif <- exp(des%*%beta) ^ {hstr == 'PH'|| hstr == 'AH'}
+  }
+  # Simulating the times to event
+  #p0 is the survival probabilities - remains to convert into probability of 
+  #event, since quantf is the inverse CDF. 
+  p0 <- as.vector(1 - exp(log(1-u)*exp.dif))
+  # print(p0[1:50])
+  #Invert w.r.t. survival function
+  #Note S^-1(t) = F^-1(1-t) for any survival function/CDF. 
+  times <- as.vector(quantf(1-p0)/exp.xbeta_t)
+  return(as.vector(times))
+}
 
-
-
-
+#-------------------------------------------------------------------------------
+#' ghs function - A wrapper to evaluate GH-family survival probabilities quickly
+#' starting from the cumulative hazard level.  
+#' Distributions: LogNormal, LogLogistic, GenGamma, Gamma, Weibull, PGW, EW
+#' @param theta  :  parameters of the baseline hazard
+#' @param beta_h  : regression parameters multiplying the hazard for GH model
+#' @param beta_t  : regression parameters multiplying the time scale for GH model
+#' @param beta  : regression parameters for AFT, PH, and AH models
+#' @param des_h : Design matrix for GH model (hazard scale)
+#' @param des_t : Design matrix for GH model (time scale)
+#' @param des : Design matrix for AFT, PH, and AH models
+#' @param hstr  : hazard structure (AH, AFT, PH, GH)
+#' @param baseline  : baseline hazard distribution
+#' @param tau  : times to evaluate survival at
+#-------------------------------------------------------------------------------
+ghs<- function(des = NULL, des_h = NULL, des_t = NULL, theta,
+               beta_h = NULL, beta_t = NULL, beta = NULL, hstr, baseline, 
+               tau){
+  
+  if(!is.null(des))   des <- as.matrix(des)
+  if(!is.null(des_h)) des_h <- as.matrix(des_h)
+  if(!is.null(des_t)) des_t <- as.matrix(des_t)
+  
+  #Cumulative Hazard functions 
+  if (baseline == 'LogNormal') chaz <- function(t) chlnorm(t, theta[1], theta[2])
+  if (baseline == 'LogLogistic') chaz <- function(t) chllogis(t, theta[1], theta[2])
+  if (baseline == 'Gamma') chaz <- function(t) chgamma(t, theta[1], theta[2])
+  if (baseline == 'Weibull') chaz <- function(t) chweibull(t, theta[1], theta[2])
+  if (baseline == 'PGW') chaz <- function(t) chpgw(t, theta[1], theta[2], theta[3])
+  if (baseline == 'EW') chaz <- function(t) chew(t, theta[1], theta[2], theta[3])
+  if (baseline == 'GenGamma') chaz <- function(t) chggamma(t, theta[1], theta[2], theta[3])
+  
+  #evaluating the individual time- and hazard- level factors:
+  if(hstr == 'GH'){
+    exp.xbeta_t  <- exp(des_t%*%beta_t)
+    exp.dif <- exp(des_t%*%beta_t - des_h%*%beta_h) 
+  } 
+  else {
+    exp.xbeta_t  <- exp(des%*%beta) ^ {hstr == 'PH'|| hstr == 'AH'}
+    exp.dif <- exp(des%*%beta) ^ {hstr == 'AFT'|| hstr == 'AH'}
+  }
+  #regularity check
+  if (length(tau) != dim(exp.xbeta_t)[1]){
+    stop('The dimension of tau is not equal to the number of observations!')
+  }
+  #Should return a length-n vector of survival probabilities
+  #evaluated using the relationship between the cumulative hazard and survival 
+  #function
+  return(exp(-chaz(exp.dif * tau) * exp.xbeta_t) )
+}
 ###############################################################################################
 ###############################################################################################
 ###############################################################################################
