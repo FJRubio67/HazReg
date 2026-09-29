@@ -24,9 +24,10 @@
 #' In the AFT model, event time is rescaled as
 #' \deqn{H(t \mid x(t)) = H_0(t \exp(x(t)^\top\beta); a_0, b_0, c_0).}
 #'
-#' @param df A data frame containing:
+#' @param df A data frame in LONG format containing:
 #'   \itemize{
-#'     \item `time`: numeric vector of time points.
+#'     \item `ID`: an identifier for each patient, potentially across multiple time points.
+#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID.
 #'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
 #'           representing \eqn{x(t)}.
 #'   }
@@ -48,9 +49,9 @@ CH_TVC <- function(df, beta,
 
   # Original order
   df$original_order_idx <- seq_len(nrow(df))
-
+  #print(df)
   ## Ensure sorted data
-  df <- df[order(df$ID, df$time), ]
+  df <- df[order(df$original_order_idx, df$time), ]
 
   ## Extract design matrix
   Xmat <- as.matrix(df[, grep("^des", names(df))])
@@ -69,7 +70,6 @@ CH_TVC <- function(df, beta,
 
   ## Split by individual
   split_df <- split(seq_len(nrow(df)), df$ID)
-
   ## Storage
   H_out <- numeric(nrow(df))
 
@@ -77,21 +77,26 @@ CH_TVC <- function(df, beta,
 
     t <- df$time[idx]
     xb <- exp_xb[idx]
-
+    #print(xb)    
+    #get delta t's
+    dt = t - c(0, t[2:length(t)])
+    
     if (hstr == "PH") {
 
       H0_t <- H0(t)
-      dH0  <- diff(c(0, H0_t))
-      H_i  <- cumsum(dH0 * xb)
+      dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
+      #dH0  <- diff(c(0, H0_t))
+      H_i  <- cumsum((H0_t - dH0) * xb)
 
     }
 
     if (hstr == "AFT") {
-
+      #evaluate times and differences between times, then take their sum. 
       H0_t <- H0(t * xb)
-      dH0  <- diff(c(0, H0_t))
-      H_i  <- cumsum(dH0)
+      dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
 
+      #dH0  <- diff(c(0, H0_t))
+      H_i  <- cumsum(H0_t - dH0)
     }
 
     H_out[idx] <- H_i
