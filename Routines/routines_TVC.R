@@ -24,34 +24,33 @@
 #' In the AFT model, event time is rescaled as
 #' \deqn{H(t \mid x(t)) = H_0(t \exp(x(t)^\top\beta); a_0, b_0, c_0).}
 #'
-#' @param df A data frame in LONG format containing:
+#' @param df A data frame in longitudinal format containing:
 #'   \itemize{
-#'     \item `ID`: an identifier for each patient, potentially across multiple time points.
-#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID.
-#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
-#'           representing \eqn{x(t)}.
+#'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
+#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID. 
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param theta Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
 #'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
 #' @param hstr Hazard structure ("PH" or "AFT")
-#'
+#' @param `ID_nm` - The name of the `ID` variable in `df`. Default "ID".
+#' @param `time_nm` - The name of the `time` variable in `df`. Default "time". 
 #' @return A numeric vector with the cumulative hazard evaluated at each time
 #'   point in `df`.
 #'
 #' @export
 CH_TVC <- function(df, beta,
                    theta,
-                   chfun, hstr) {
-
+                   chfun, hstr, ID_nm = "ID", time_nm = "time"){
   npar = length(theta)
-
+  ##Convert name into des* structure.
+  colnames(df)[!(colnames(df) %in% c(ID_nm, time_nm) ) ] = 
+    sapply(FUN = function(x) paste("des", x, sep = ""), X = as.character(seq_len((ncol(df)-2) ) ) )
   # Original order
   df$original_order_idx <- seq_len(nrow(df))
-  #print(df)
-  ## Ensure sorted data
-  df <- df[order(df$original_order_idx, df$time), ]
+  ## Ensure sorted data 
+  df <- df[order(df$original_order_idx, df[, time_nm]), ]
 
   ## Extract design matrix
   Xmat <- as.matrix(df[, grep("^des", names(df))])
@@ -69,15 +68,14 @@ CH_TVC <- function(df, beta,
   }
 
   ## Split by individual
-  split_df <- split(seq_len(nrow(df)), df$ID)
+  split_df <- split(seq_len(nrow(df)), df[, ID_nm])
   ## Storage
   H_out <- numeric(nrow(df))
 
   for (idx in split_df) {
 
-    t <- df$time[idx]
+    t <- df[idx, time_nm]
     xb <- exp_xb[idx]
-    #print(xb)    
     #get delta t's
     dt = t - c(0, t[2:length(t)])
     
@@ -85,7 +83,6 @@ CH_TVC <- function(df, beta,
 
       H0_t <- H0(t)
       dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
-      #dH0  <- diff(c(0, H0_t))
       H_i  <- cumsum((H0_t - dH0) * xb)
 
     }
@@ -94,14 +91,11 @@ CH_TVC <- function(df, beta,
       #evaluate times and differences between times, then take their sum. 
       H0_t <- H0(t * xb)
       dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
-
-      #dH0  <- diff(c(0, H0_t))
       H_i  <- cumsum(H0_t - dH0)
     }
-
     H_out[idx] <- H_i
   }
-
+  
   df$cum_hazard <- H_out
 
   ## 4. Restore original order and remove the temporary index
@@ -127,42 +121,40 @@ CH_TVC <- function(df, beta,
 #' In the AFT model, event time is rescaled as
 #' \deqn{H(t \mid x(t)) = H_0(t \exp(x(t)^\top\beta); a_0, b_0, c_0).}
 #'
-#' @param df A data frame containing:
+#' @param df A data frame in longitudinal format containing:
 #'   \itemize{
-#'     \item `time`: numeric vector of time points.
-#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
-#'           representing \eqn{x(t)}.
+#'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
+#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID. 
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param theta Numeric baseline parameters of the cumulative hazard.
 #' @param chfun A function computing the baseline cumulative hazard:
 #'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
 #' @param hstr Hazard structure ("PH" or "AFT")
+#' @param `ID_nm` - The name of the `ID` variable in `df`. Default "ID".
+#' @param `time_nm` - The name of the `time` variable in `df`. Default "time". 
 #'
 #' @return A numeric vector with the survival function evaluated at the last time
 #'   point in `df`.
 #'
 #' @export
 SPred_TVC <-
-  function(df, beta, theta, chfun, hstr) {
+  function(df, beta, theta, chfun, hstr, ID_nm = "ID", time_nm = "time") {
     # Sample size
-    n <- max(df$ID)
-
-
+    n <- max(df[, ID_nm])
     # Calculating the cumulative hazard function at all time points
-
     CH <- CH_TVC(
       df    = df,
       beta  = beta,
       theta = theta,
       chfun = chfun,
-      hstr = hstr
-    )$cum_hazard
-
-    ## Extract last cumulative hazard per individual
-    #    last_idx <- unique(ave(seq_along(CH), df$ID, FUN = max))
-    #    H_last   <- CH[last_idx]
-    H_last <- tapply(CH, df$ID, function(x) x[length(x)])
+      hstr = hstr, 
+      ID_nm = ID_nm, 
+      time_nm = time_nm
+    )
+    #Find an individual's cumulative hazard as the sum of their CHs for each 
+    #time split. 
+    H_last = aggregate(CH, by = formula(CH$cum_hazard ~ CH[, ID_nm]), FUN = sum)[, 2]
 
     ## Survival at last time
     S_last <- exp(-H_last)
@@ -204,24 +196,24 @@ SPred_TVC <-
 #' the covariate values are taken to be those at the most recent time
 #' strictly less than `t`.
 #'
-#' @param df A data frame containing:
+#'
+#' @param df A data frame in longitudinal format containing:
 #'   \itemize{
-#'     \item `ID`: individual identifier.
-#'     \item `time`: numeric vector of observation times.
-#'     \item Covariate columns named with prefix `"des"` (e.g., `des1`, `des2`, ...),
-#'           representing the time-varying covariate process \eqn{x_i(t)}.
+#'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
+#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID. 
 #'   }
+#' @param beta Numeric vector of regression coefficients.
+#' @param theta Numeric baseline parameters of the cumulative hazard.
+#' @param chfun A function computing the baseline cumulative hazard:
+#'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
+#' @param hstr Hazard structure ("PH" for Proportional Hazards or "AFT" for Accelerated Failure Time)
+#' @param `ID_nm` - The name of the `ID` variable in `df`. Default "ID".
+#' @param `time_nm` - The name of the `time` variable in `df`. Default "time". 
 #' @param i Integer specifying the individual for whom the survival
 #'   function is to be evaluated.
 #' @param t Numeric value giving the time point at which the survival
 #'   function is evaluated. Must lie within the observation window of
 #'   individual `i`.
-#' @param beta Numeric vector of regression coefficients.
-#' @param theta Numeric baseline parameters of the cumulative hazard.
-#' @param chfun A function computing the baseline cumulative hazard:
-#'   `chfun(time, theta[1], theta[2])` or `chfun(time, theta[1], theta[2], theta[3])`.
-#' @param hstr Character string specifying the hazard structure:
-#'   `"PH"` for proportional hazards or `"AFT"` for accelerated failure time.
 #'
 #' @return A numeric scalar giving the survival probability
 #'   \eqn{S_i(t)} for individual `i` at time `t`.
@@ -244,23 +236,40 @@ SPred_TVC_i <- function(
     beta,
     theta,
     chfun,
-    hstr
+    hstr, 
+    ID_nm = "ID", 
+    time_nm = "time"
 ) {
-
   ## 1. Subset individual data
-  dfi <- df[df$ID == i, ]
-  dfi <- dfi[order(dfi$time), ]
-
-  if (t < min(dfi$time) || t > max(dfi$time))
-    stop("t must lie within the individual's observation window")
-
-  ## 2. Add time t if needed (piecewise-constant covariates)
-  if (!any(abs(dfi$time - t) < .Machine$double.eps)) {
-    idx <- max(which(dfi$time < t))
+  dfi <- df[df[, ID_nm] == i, ]
+  dfi <- dfi[order(dfi[, time_nm]), ]
+  
+  
+  ## 2. Add time t if needed (piecewise-constant covariates, even from time 0)
+  #if the time lies before the first observation, we copy all the covariates 
+  #from the first time point backwards, and use those to construct a new dataframe
+  #for time t < min(dfi[, time]). Note under the case with t < min(dfi[, time_nm])
+  #there will be a warning, but this is a superfluous warning and can be ignored. 
+  #If t exceeds the last observation time, then this function will extrapolate
+  #(with questionable certainty), via the piecewise-constant assumption. 
+  if (t > max(dfi[, time_nm])){
+    dfi[nrow(dfi), time_nm] = t
+  }
+  
+  
+  if (t <= min(dfi[, time_nm])) {
+    pre_obs = 1
+    dfi = dfi[1, ]
+    dfi[, time_nm] = t
+  }
+  
+  else{
+    pre_obs = 0
+    idx <- max(which(dfi[, time_nm] < t))
     newrow <- dfi[idx, ]
-    newrow$time <- t
+    newrow[, time_nm] <- t
     dfi <- rbind(dfi, newrow)
-    dfi <- dfi[order(dfi$time), ]
+    dfi <- dfi[order(dfi[, time_nm]), ]
   }
 
   ## 3. Compute cumulative hazard via existing engine
@@ -269,11 +278,15 @@ SPred_TVC_i <- function(
     beta  = beta,
     theta = theta,
     chfun = chfun,
-    hstr  = hstr
+    hstr  = hstr, 
+    ID_nm = ID_nm,
+    time_nm = time_nm
   )$cum_hazard
-
+  
   ## 4.  Extract cumulative hazard at time t
-  H_i_t <- CH[which.min(abs(dfi$time - t))]
+  assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH, 
+                                     no = CH[which.min(abs(dfi[,time_nm] - t))]))
+  
 
   ## 5. Survival
   S_i_t <- exp(-H_i_t)
@@ -307,10 +320,8 @@ SPred_TVC_i <- function(
 #' @param seed Integer random seed for reproducibility.
 #' @param df A data frame containing the longitudinal covariate information with:
 #'   \itemize{
-#'     \item \code{ID}: individual identifier.
-#'     \item \code{time}: observation times for covariate measurements.
-#'     \item Covariate columns named with prefix \code{"des"}
-#'           (e.g., \code{des1}, \code{des2}, ...).
+#'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
+#'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID.
 #'   }
 #'   Covariates are assumed to be piecewise constant between observation times.
 #' @param chfun A function computing the baseline cumulative hazard,
@@ -340,42 +351,24 @@ SPred_TVC_i <- function(
 #' @seealso \code{\link{CH_TVC}}, \code{\link{SPred_TVC}}, \code{\link{SPred_TVC_i}}
 #'
 #' @export
-sim_TVC <- function(seed, df, chfun, hstr, theta, beta) {
+sim_TVC <- function(n = NULL, seed, df, chfun, hstr, theta, beta, ID_nm = "ID", 
+                    time_nm = "time"){
 
   set.seed(seed)
-
-  n <- length(unique(df$ID))
-  sim    <- numeric(n)
-  status <- integer(n)
-
-  ## Survival at last observed time
-
-  survs <- SPred_TVC(
-    df    = df,
-    beta  = beta,
-    theta = theta,
-    chfun = chfun,
-    hstr  = hstr
-  )
-
+  
+  if (is.null(n)) n <- length(unique(df[, ID_nm]))
+  sim    <- rep(NA, n)
 
   ## Maximum follow-up times
-  times <- as.vector(with(df, tapply(time, ID, max)))
+  times <- unlist(lapply(X = split(df, ~ df[,ID_nm]), FUN = function(x) max(x[, time_nm])),
+                  use.names = F)
 
   ## Uniform draws
   u <- runif(n)
-
-  ## Censoring indicator
-  censored <- (survs > u)
-
-  if(sum(censored) > 0){
-    sim[censored]    <- times[censored]
-    status[censored] <- 0
-  }
-
+  
   ## Event times
-  for (i in which(!censored)) {
-
+  for (i in seq_len(n)) {
+    ##evaluate the analytical expression for t using uniroot
     rootfun <- function(t) {
       SPred_TVC_i(
         df    = df,
@@ -384,20 +377,15 @@ sim_TVC <- function(seed, df, chfun, hstr, theta, beta) {
         beta  = beta,
         theta = theta,
         chfun = chfun,
-        hstr  = hstr
+        hstr  = hstr,
+        ID_nm = ID_nm,
+        time_nm = time_nm
       ) - u[i]
     }
-
-    ## Safety check for bracketing
-    if (rootfun(0) < 0 || rootfun(times[i]) > 0) {
-      stop("Root not bracketed for individual ", i)
+    sim[i] <- uniroot(rootfun, interval = c(0, times[i]), extendInt = "downX")$root
     }
 
-    sim[i] <- uniroot(rootfun, interval = c(0, times[i]))$root
-    status[i] <- 1
-  }
-
-  list(time = sim, status = status)
+  return(sim)
 }
 
 
