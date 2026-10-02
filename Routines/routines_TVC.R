@@ -91,9 +91,7 @@ CH_TVC <- function(df, beta,
     if (hstr == "AFT") {
       #evaluate times and differences between times, then take their sum. 
       H0_t <- H0(t * xb)
-      print(H0_t)
       dH0 <- H0(dt * xb)
-      print(dH0)
       H_i  <- cumsum(H0_t - dH0)
     }
     H_out[idx] <- H_i
