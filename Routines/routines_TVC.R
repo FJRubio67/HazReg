@@ -49,7 +49,6 @@ CH_TVC <- function(df, beta,
     sapply(FUN = function(x) paste("des", x, sep = ""), X = as.character(seq_len((ncol(df)-2) ) ) )
   # Original order
   df = cbind(df,original_order_idx = seq_len(nrow(df)))
-  print(df)
   ## Ensure sorted data 
   df <- df[order(df[,"original_order_idx"], df[, time_nm]), ]
   ## Extract design matrix and associated linear predictor for every row.
@@ -78,7 +77,7 @@ CH_TVC <- function(df, beta,
     #get associated factors
     xb <- exp_xb[idx]
     #get delta t's by taking the difference between t and t shifted down by 1 index. 
-    dt = c(0, diff(t))
+    dt = c(0, t[1:(length(t)-1)])
     
     if (hstr == "PH") {
 
@@ -286,7 +285,6 @@ SPred_TVC_i <- function(
     ID_nm = ID_nm,
     time_nm = time_nm
   )
-  print(CH)
   ## 4.  Extract cumulative hazard at time t, as the SUM OF THE CUMULATIVE 
   #HAZARDS UP TO POINT T. 
   assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH$cum_hazard, 
