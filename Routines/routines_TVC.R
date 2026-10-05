@@ -28,6 +28,7 @@
 #'   \itemize{
 #'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
 #'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID. 
+#'     The interval between the two is defined as 
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param theta Numeric baseline parameters of the cumulative hazard.
