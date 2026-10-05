@@ -95,7 +95,6 @@ CH_TVC <- function(df, beta,
     }
     H_out[idx] <- H_i
   }
-  
   df = cbind(df, cum_hazard = H_out)
 
   ## 4. Restore original order and remove the temporary index
@@ -152,9 +151,8 @@ SPred_TVC <-
       ID_nm = ID_nm, 
       time_nm = time_nm
     )
-    #Find an individual's cumulative hazard as the sum of their CHs for each 
-    #time split. 
-    H_last = aggregate(CH, by = formula(CH$cum_hazard ~ CH[, ID_nm]), FUN = sum)[, 2]
+    #Find an individual's cumulative hazard as the last CH.
+    H_last = aggregate(CH, by = formula(CH$cum_hazard ~ CH[, ID_nm]), FUN = tail, n = 1)[, 2]
 
     ## Survival at last time
     S_last <- exp(-H_last)
@@ -244,7 +242,6 @@ SPred_TVC_i <- function(
   dfi <- df[df[, ID_nm] == i, ]
   dfi <- dfi[order(dfi[, time_nm]), ]
   
-  
   ## 2. Add time t if needed (piecewise-constant covariates, even from time 0)
   #if the time lies before the first observation, we copy all the covariates 
   #from the first time point backwards, and use those to construct a new dataframe
@@ -257,6 +254,7 @@ SPred_TVC_i <- function(
   
   if (t >= max(dfi[, time_nm])){
     pre_obs = 0
+    idx = nrow(dfi) - 1
     dfi[nrow(dfi), time_nm] = t
   }
   
@@ -269,7 +267,7 @@ SPred_TVC_i <- function(
   else{
     pre_obs = 0
     idx <- max(which(dfi[, time_nm] < t))
-    newrow <- dfi[idx, ]
+    newrow <- dfi[idx+1, ]
     newrow[, time_nm] <- t
     dfi <- rbind(dfi, newrow)
     dfi <- dfi[order(dfi[, time_nm]), ]
@@ -285,11 +283,11 @@ SPred_TVC_i <- function(
     ID_nm = ID_nm,
     time_nm = time_nm
   )
-  ## 4.  Extract cumulative hazard at time t, as the SUM OF THE CUMULATIVE 
-  #HAZARDS UP TO POINT T. 
-  assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH$cum_hazard, 
-                                     no = sum(CH$cum_hazard[1:which.min(abs(dfi[,time_nm] - t))])))
   
+  ## 4.  Extract cumulative hazard at time t, as the cumulative hazard 
+  #associated with that time point. 
+  assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH$cum_hazard, 
+                                     no = CH$cum_hazard[idx+1]))
 
   ## 5. Survival
   S_i_t <- exp(-H_i_t)
