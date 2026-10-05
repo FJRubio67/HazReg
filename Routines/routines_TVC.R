@@ -28,6 +28,7 @@
 #'   \itemize{
 #'     \item `ID`: an identifier for each patient, potentially across multiple time points. 
 #'     \item `time`: numeric vector of time points, strictly monotonically increasing within each ID. 
+#'     The interval between the two is defined as 
 #'   }
 #' @param beta Numeric vector of regression coefficients.
 #' @param theta Numeric baseline parameters of the cumulative hazard.
@@ -48,11 +49,10 @@ CH_TVC <- function(df, beta,
   colnames(df)[!(colnames(df) %in% c(ID_nm, time_nm) ) ] = 
     sapply(FUN = function(x) paste("des", x, sep = ""), X = as.character(seq_len((ncol(df)-2) ) ) )
   # Original order
-  df$original_order_idx <- seq_len(nrow(df))
+  df = cbind(df,original_order_idx = seq_len(nrow(df)))
   ## Ensure sorted data 
-  df <- df[order(df$original_order_idx, df[, time_nm]), ]
-
-  ## Extract design matrix
+  df <- df[order(df[,"original_order_idx"], df[, time_nm]), ]
+  ## Extract design matrix and associated linear predictor for every row.
   Xmat <- as.matrix(df[, grep("^des", names(df))])
   exp_xb <- as.vector(exp(Xmat %*% beta))
 
@@ -71,18 +71,19 @@ CH_TVC <- function(df, beta,
   split_df <- split(seq_len(nrow(df)), df[, ID_nm])
   ## Storage
   H_out <- numeric(nrow(df))
-
+  #for every single unique ID:
   for (idx in split_df) {
-
+    #get times
     t <- df[idx, time_nm]
+    #get associated factors
     xb <- exp_xb[idx]
-    #get delta t's
-    dt = t - c(0, t[2:length(t)])
+    #get delta t's by taking the difference between t and t shifted down by 1 index. 
+    dt = c(0, t[1:(length(t)-1)])
     
     if (hstr == "PH") {
 
       H0_t <- H0(t)
-      dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
+      dH0 <- H0(dt)
       H_i  <- cumsum((H0_t - dH0) * xb)
 
     }
@@ -90,13 +91,12 @@ CH_TVC <- function(df, beta,
     if (hstr == "AFT") {
       #evaluate times and differences between times, then take their sum. 
       H0_t <- H0(t * xb)
-      dH0 <- H0(c(0, t[1:(length(t)-1)]) * xb)
+      dH0 <- H0(dt * xb)
       H_i  <- cumsum(H0_t - dH0)
     }
     H_out[idx] <- H_i
   }
-  
-  df$cum_hazard <- H_out
+  df = cbind(df, cum_hazard = H_out)
 
   ## 4. Restore original order and remove the temporary index
   df <- df[order(df$original_order_idx), ]
@@ -152,9 +152,8 @@ SPred_TVC <-
       ID_nm = ID_nm, 
       time_nm = time_nm
     )
-    #Find an individual's cumulative hazard as the sum of their CHs for each 
-    #time split. 
-    H_last = aggregate(CH, by = formula(CH$cum_hazard ~ CH[, ID_nm]), FUN = sum)[, 2]
+    #Find an individual's cumulative hazard as the last CH.
+    H_last = aggregate(CH, by = formula(CH$cum_hazard ~ CH[, ID_nm]), FUN = tail, n = 1)[, 2]
 
     ## Survival at last time
     S_last <- exp(-H_last)
@@ -244,20 +243,23 @@ SPred_TVC_i <- function(
   dfi <- df[df[, ID_nm] == i, ]
   dfi <- dfi[order(dfi[, time_nm]), ]
   
-  
   ## 2. Add time t if needed (piecewise-constant covariates, even from time 0)
   #if the time lies before the first observation, we copy all the covariates 
   #from the first time point backwards, and use those to construct a new dataframe
   #for time t < min(dfi[, time]). Note under the case with t < min(dfi[, time_nm])
   #there will be a warning, but this is a superfluous warning and can be ignored. 
+  
   #If t exceeds the last observation time, then this function will extrapolate
-  #(with questionable certainty), via the piecewise-constant assumption. 
-  if (t > max(dfi[, time_nm])){
+  #(with questionable certainty), via the piecewise-constant assumption. To do 
+  #so, we just set the time at the last row to be t. 
+  
+  if (t >= max(dfi[, time_nm])){
+    pre_obs = 0
+    idx = nrow(dfi) - 1
     dfi[nrow(dfi), time_nm] = t
   }
   
-  
-  if (t <= min(dfi[, time_nm])) {
+  else if (t <= min(dfi[, time_nm])) {
     pre_obs = 1
     dfi = dfi[1, ]
     dfi[, time_nm] = t
@@ -266,7 +268,7 @@ SPred_TVC_i <- function(
   else{
     pre_obs = 0
     idx <- max(which(dfi[, time_nm] < t))
-    newrow <- dfi[idx, ]
+    newrow <- dfi[idx+1, ]
     newrow[, time_nm] <- t
     dfi <- rbind(dfi, newrow)
     dfi <- dfi[order(dfi[, time_nm]), ]
@@ -281,12 +283,12 @@ SPred_TVC_i <- function(
     hstr  = hstr, 
     ID_nm = ID_nm,
     time_nm = time_nm
-  )$cum_hazard
+  )
   
-  ## 4.  Extract cumulative hazard at time t
-  assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH, 
-                                     no = CH[which.min(abs(dfi[,time_nm] - t))]))
-  
+  ## 4.  Extract cumulative hazard at time t, as the cumulative hazard 
+  #associated with that time point. 
+  assign(x = "H_i_t", value = ifelse(pre_obs, yes = CH$cum_hazard, 
+                                     no = CH$cum_hazard[idx+1]))
 
   ## 5. Survival
   S_i_t <- exp(-H_i_t)
@@ -382,7 +384,8 @@ sim_TVC <- function(n = NULL, seed, df, chfun, hstr, theta, beta, ID_nm = "ID",
         time_nm = time_nm
       ) - u[i]
     }
-    sim[i] <- uniroot(rootfun, interval = c(0, times[i]), extendInt = "downX")$root
+    #find t which solves S(t) = u
+    sim[i] <- uniroot(rootfun, interval = c(0, times[i]), extendInt = "downX", tol = 1e-8)$root
     }
 
   return(sim)
