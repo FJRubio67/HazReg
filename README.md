@@ -24,8 +24,8 @@ practice for these routines.
 ## Installation
 
 ```r
-# install.packages("devtools")
-devtools::install_github("FJRubio67/HazReg")
+# install.packages("pak")
+pak::pak("FJRubio67/HazReg")
 library(HazReg)
 ```
 
