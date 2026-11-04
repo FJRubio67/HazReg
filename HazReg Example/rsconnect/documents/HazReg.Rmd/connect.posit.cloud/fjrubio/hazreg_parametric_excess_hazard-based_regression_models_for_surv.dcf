@@ -1,0 +1,12 @@
+name: hazreg_parametric_excess_hazard-based_regression_models_for_surv
+title: HazReg: Parametric Excess Hazard-based regression models for survival data
+username: fjrubio
+account: fjrubio
+server: connect.posit.cloud
+hostUrl: https://api.connect.posit.cloud/v1
+appId: 01a1a65b-146f-0757-fd60-ae6176f0a5a0
+bundleId:
+url: https://connect.posit.cloud/fjrubio/content/01a1a65b-146f-0757-fd60-ae6176f0a5a0
+version: 1
+asMultiple: FALSE
+asStatic: TRUE
