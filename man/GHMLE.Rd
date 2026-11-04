@@ -13,7 +13,7 @@ GHMLE(
   des = NULL,
   des_t = NULL,
   method = "Nelder-Mead",
-  maxit = 100
+  control = list()
 )
 }
 \arguments{
@@ -48,7 +48,9 @@ LogLogistic ("LogLogistic")}
 
 \item{method}{: "nlminb" or optimisation method to be used in optim (see ?optim)}
 
-\item{maxit}{: maximum number of iterations in optim or nlminb}
+\item{control}{: list of control parameters passed to optim (see ?optim) or nlminb (see ?nlminb),
+e.g. list(maxit = 500, reltol = 1e-10) for optim or list(iter.max = 500, rel.tol = 1e-10) for nlminb.
+Defaults: maxit = 100 (optim) or iter.max = 100 (nlminb). Supplied elements override the defaults.}
 }
 \value{
 It returns the output from optim or nlminb for the selected model and the negative log likelihood function

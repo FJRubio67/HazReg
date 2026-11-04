@@ -16,7 +16,7 @@ GEHMLE(
   des = NULL,
   des_t = NULL,
   method = "Nelder-Mead",
-  maxit = 100
+  control = list()
 )
 }
 \arguments{
@@ -38,7 +38,8 @@ GEHMLE(
 
 \item{method}{"nlminb" or optimisation method to be used in optim}
 
-\item{maxit}{maximum number of iterations}
+\item{control}{list of control parameters passed to optim (see ?optim) or nlminb (see ?nlminb).
+Defaults: maxit = 100 (optim) or iter.max = 100 (nlminb). Supplied elements override the defaults.}
 }
 \value{
 It returns the output from optim or nlminb and the negative log likelihood function
