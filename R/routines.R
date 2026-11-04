@@ -1307,17 +1307,13 @@ GHMLE <-
     #------------------------------------------------------------------------------------
 
     if (method != "nlminb") {
-      # defaults overridden by user-supplied control (see ?optim)
-      ctrl <- modifyList(list(maxit = 100), control)
       OPT <- optim(init,
                    log.lik,
-                   control = ctrl,
+                   control = control,
                    method = method)
     }
     if (method == "nlminb") {
-      # defaults overridden by user-supplied control (see ?nlminb)
-      ctrl <- modifyList(list(iter.max = 100), control)
-      OPT <- nlminb(init, log.lik, control = ctrl)
+      OPT <- nlminb(init, log.lik, control = control)
     }
 
     #------------------------------------------------------------------------------------
@@ -2355,17 +2351,13 @@ GEHMLE <-  function(init,
   #------------------------------------------------------------------------------------
 
   if (method != "nlminb") {
-    # defaults overridden by user-supplied control (see ?optim)
-    ctrl <- modifyList(list(maxit = 100), control)
     OPT <- optim(init,
                  log.lik,
-                 control = ctrl,
+                 control = control,
                  method = method)
   }
   if (method == "nlminb") {
-    # defaults overridden by user-supplied control (see ?nlminb)
-    ctrl <- modifyList(list(iter.max = 100), control)
-    OPT <- nlminb(init, log.lik, control = ctrl)
+    OPT <- nlminb(init, log.lik, control = control)
   }
 
   #------------------------------------------------------------------------------------
