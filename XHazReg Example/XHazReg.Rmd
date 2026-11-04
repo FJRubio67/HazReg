@@ -105,6 +105,7 @@ library(numDeriv)
 library(knitr)
 library(survival)
 library(mvtnorm)
+library(matrixStats)
 
 # Load the simulated data set
 # https://github.com/FJRubio67/HazReg
@@ -142,53 +143,53 @@ box()
 ```{r}
 # PGWGH
 OPTPGWGH <- GEHMLE(init = rep(0, 3 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-                   hstr = "GH", dist = "PGW", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+                   hstr = "GH", dist = "PGW", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # PGWAFT
 OPTPGWAFT <- GEHMLE(init = rep(0, 3 + ncol(X)), times = times, status = status, hp = hp, 
-                    hstr = "AFT", dist = "PGW", des = X, method = "nlminb", control = list(iter.max = 10000)))
+                    hstr = "AFT", dist = "PGW", des = X, method = "nlminb", control = list(iter.max = 10000))
 
 # PGWPH
 OPTPGWPH <- GEHMLE(init = rep(0, 3 + ncol(X)), times = times, status = status, hp = hp, 
-                   hstr = "PH", dist = "PGW", des = X, method = "nlminb", control = list(iter.max = 10000)))
+                   hstr = "PH", dist = "PGW", des = X, method = "nlminb", control = list(iter.max = 10000))
 
 # PGWAH
 OPTPGWAH <- GEHMLE(init = rep(0, 3 + ncol(X)), times = times, status = status, hp = hp, 
-                   hstr = "AH", dist = "PGW", des_t = X, method = "nlminb", control = list(iter.max = 10000)))
+                   hstr = "AH", dist = "PGW", des_t = X, method = "nlminb", control = list(iter.max = 10000))
 
 
 # LLGH
 OPTLLGH <- GEHMLE(init = rep(0, 2 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-                 hstr = "GH", dist = "LogLogistic", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "GH", dist = "LogLogistic", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # LLAFT
 OPTLLAFT <- GEHMLE(init = rep(0, 2 + ncol(X)), times = times, status = status, hp = hp, 
-                  hstr = "AFT", dist = "LogLogistic", des = X, method = "nlminb", control = list(iter.max = 10000)))
+                  hstr = "AFT", dist = "LogLogistic", des = X, method = "nlminb", control = list(iter.max = 10000))
 
 # LLPH
 OPTLLPH <- GEHMLE(init = rep(0, 2 + ncol(X)), times = times, status = status, hp = hp, 
-                 hstr = "PH", dist = "LogLogistic", des = X, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "PH", dist = "LogLogistic", des = X, method = "nlminb", control = list(iter.max = 10000))
 
 # LLAH
 OPTLLAH <- GEHMLE(init = rep(0, 2 + ncol(X)), times = times, status = status, hp = hp, 
-                 hstr = "AH", dist = "LogLogistic", des_t = X, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "AH", dist = "LogLogistic", des_t = X, method = "nlminb", control = list(iter.max = 10000))
 
 
 # EWGH
 OPTEWGH <- GEHMLE(init = rep(0, 3 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-                 hstr = "GH", dist = "EW", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "GH", dist = "EW", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # GGGH
 OPTGGGH <- GEHMLE(init = rep(0, 3 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-                 hstr = "GH", dist = "GenGamma", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "GH", dist = "GenGamma", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # LNGH
 OPTLNGH <- GEHMLE(init = rep(0, 2 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-                 hstr = "GH", dist = "LogNormal", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+                 hstr = "GH", dist = "LogNormal", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # GGH
 OPTGGH <- GEHMLE(init = rep(0, 2 + ncol(X) + ncol(Xt)), times = times, status = status, hp = hp, 
-               hstr = "GH", dist = "Gamma", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000)))
+               hstr = "GH", dist = "Gamma", des = X, des_t = Xt, method = "nlminb", control = list(iter.max = 10000))
 
 # MLEs in the original parameterisations
 MLEPGWGH <- c(exp(OPTPGWGH$OPT$par[1:3]),OPTPGWGH$OPT$par[-c(1:3)])

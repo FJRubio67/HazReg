@@ -4,9 +4,9 @@ username: fjrubio
 account: fjrubio
 server: connect.posit.cloud
 hostUrl: https://api.connect.posit.cloud/v1
-appId: 019fcc17-c0d3-610f-be68-ff852768b29c
+appId: 01a1a67e-e30a-992c-f844-32135a6b7109
 bundleId:
-url: https://connect.posit.cloud/fjrubio/content/019fcc17-c0d3-610f-be68-ff852768b29c
+url: https://connect.posit.cloud/fjrubio/content/01a1a67e-e30a-992c-f844-32135a6b7109
 version: 1
 asMultiple: FALSE
 asStatic: TRUE
